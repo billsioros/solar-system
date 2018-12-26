@@ -10,6 +10,11 @@ namespace utility
     struct Point { double x, y, z; };
 
     struct Color { std::uint8_t red, green, blue, alpha; };
+
+    double rand(double min, double max);
+    int rand(int min, int max);
+
+    Point spherical2cartesian(double radius, double theta, double phi);
 }
 
 namespace solar_system
@@ -51,6 +56,7 @@ namespace solar_system
 
     public:
 
+        Star();
         Star(const utility::Point& position, std::size_t radius, const utility::Color& color);
 
         void render();

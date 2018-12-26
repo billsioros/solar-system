@@ -4,38 +4,57 @@
 #include <vector>
 #include <string>
 #include <cstdint>
+
+#include <sstream>
 #include <fstream>
 #include <iostream>
-#include <sstream>
+
+#include <cmath>
+#include <cstdlib>
+#include <ctime>
 
 #include <GL/glut.h>
 
-#define INIT_FACE_ONE(one, ss)              \
-do                                          \
-{                                           \
-    ss >> one[0];                           \
-    ss >> one[1];                           \
-                                            \
-    ss.ignore(2);                           \
-} while (false)                             \
+#define __WAVEFRONT_OBJ__ "/home/massiva/Documents/Courses/Graphics/data/planet.obj"
 
-#define INIT_FACE_ALL(face, ss)             \
-do                                          \
-{                                           \
-    INIT_FACE_ONE(face.fst, ss);            \
-                                            \
-    INIT_FACE_ONE(face.snd, ss);            \
-                                            \
-    INIT_FACE_ONE(face.thd, ss);            \
-} while (false)                             \
+double utility::rand(double min, double max)
+{
+    return ((max - min) * (static_cast<double>(std::rand()) / static_cast<double>(RAND_MAX)) + min);
+}
 
-#define INIT_POINT(point, ss)               \
-do                                          \
-{                                           \
-    ss >> point.x;                          \
-    ss >> point.y;                          \
-    ss >> point.z;                          \
-} while (false)                             \
+int utility::rand(int min, int max)
+{
+    return ((std::rand() %  (max - min + 1)) + min);
+}
+
+utility::Point utility::spherical2cartesian(double radius, double theta, double phi)
+{
+    return
+    {
+        radius * std::sin(theta) * std::cos(phi),
+        radius * std::sin(theta) * std::sin(phi),
+        radius * std::cos(theta)
+    };
+}
+
+#define INIT_POINT(line, point)                         \
+do                                                      \
+{                                                       \
+    std::istringstream ss(line);                        \
+                                                        \
+    ss >> point.x; ss >> point.y; ss >> point.z;        \
+} while (false)                                         \
+
+#define INIT_FACE(line, face)                           \
+do                                                      \
+{                                                       \
+    std::istringstream ss(line);                        \
+                                                        \
+    ss >> face.fst[0]; ss >> face.fst[1];               \
+    ss >> face.snd[0]; ss >> face.snd[1];               \
+    ss >> face.thd[0]; ss >> face.thd[1];               \
+                                                        \
+} while (false)                                         \
 
 solar_system::Planet::Planet
 (
@@ -50,28 +69,20 @@ solar_system::Planet::Planet
 
     if (!ifs.is_open())
     {
-        std::perror(("Failed to open file " + wavefront).c_str());
+        std::perror(("<ERR>: Failed to open file " + wavefront).c_str());
         std::exit(EXIT_FAILURE);
     }
 
     std::string line;
     while (std::getline(ifs, line))
     {
-        std::stringstream ss(line);
-
         if (line[0] == 'f')
         {
-            Face face;
-
-            INIT_FACE_ALL(face, ss);
-
-            faces.push_back(face);
+            Face face; INIT_FACE(line, face); faces.push_back(face);
         }
         else if (line[0] == 'v')
         {
-            utility::Point point;
-
-            INIT_POINT(point, ss);
+            utility::Point point; INIT_POINT(line, point);
 
             if (line[1] != 'n')
                 vertices.push_back(point);
@@ -86,22 +97,30 @@ solar_system::Planet::Planet
 
     if (ifs.bad())
     {
-        std::perror(("Failed to parse file " + wavefront).c_str());
+        std::perror(("<ERR>: Failed to parse file " + wavefront).c_str());
         std::exit(EXIT_FAILURE);
     }
 }
 
 void solar_system::Planet::render()
 {
+    glColor4b(color.red, color.green, color.blue, color.alpha);
+
     glPushMatrix();
+
+    glLoadIdentity();
+
+    glTranslated(position.x, position.y, position.z);
+
+    glScaled(scale, scale, scale);
 
     glBegin(GL_TRIANGLES);
 
-    for (const auto& face : faces)
+    for (const Face& face : faces)
     {
-        auto& fstn = vertices[face.fst[0] - 1];
-        auto& sndn = vertices[face.snd[0] - 1];
-        auto& thdn = vertices[face.thd[0] - 1];
+        const utility::Point& fstn = vertices[face.fst[0] - 1];
+        const utility::Point& sndn = vertices[face.snd[0] - 1];
+        const utility::Point& thdn = vertices[face.thd[0] - 1];
 
         glVertex3f(fstn.x, fstn.y, fstn.z);
         glVertex3f(sndn.x, sndn.y, sndn.z);
@@ -113,6 +132,14 @@ void solar_system::Planet::render()
     glPopMatrix();
 }
 
+solar_system::Star::Star()
+:
+position({ utility::rand(-100, 100), utility::rand(-100, 100), utility::rand(-100, 100)}),
+radius(utility::rand(10.0, 20.0)),
+color({ 255, 255, 0, utility::rand(128, 255) })
+{
+}
+
 solar_system::Star::Star(const utility::Point& position, std::size_t radius, const utility::Color& color)
 :
 position(position), radius(radius), color(color)
@@ -121,15 +148,65 @@ position(position), radius(radius), color(color)
 
 void solar_system::Star::render()
 {
+    glColor4b(color.red, color.green, color.blue, color.alpha);
 
+    glPushMatrix();
+
+    glLoadIdentity();
+
+    glTranslated(position.x, position.y, position.z);
+
+    glutSolidSphere(radius, 20, 20);
+
+    glPopMatrix();
 }
+
+static const std::size_t STAR_COUNT = 100UL;
+
+static solar_system::Star * sun;
+static solar_system::Star * ring;
+static solar_system::Star * stars;
+
+static solar_system::Planet * earth;
+static solar_system::Planet * moon;
 
 void solar_system::setup()
 {
-	ReadFile(&md);
+    std::srand(static_cast<unsigned>(std::time(nullptr)));
 
-	//Parameter handling
-	glShadeModel(GL_SMOOTH);
+    sun = new Star
+    (
+        { 0.0, 0.0, 0.0 },
+        100UL,
+        { 255, 255, 0, 255 }
+    );
+
+    ring = new Star
+    (
+        { 0.0, 0.0, 0.0 },
+        150UL,
+        { 255, 255, 0, 127 }
+    );
+
+	stars = new Star[STAR_COUNT];
+
+    earth = new Planet
+    (
+        __WAVEFRONT_OBJ__,
+        utility::spherical2cartesian(100.0, 45.0, 0.0),
+        1.0,
+        { 0, 255, 255, 255 }
+    );
+
+    moon = new Planet
+    (
+        __WAVEFRONT_OBJ__,
+        utility::spherical2cartesian(300.0, 60.0, 00),
+        0.5,
+        { 51, 51, 51, 255 }
+    );
+
+	glShadeModel(GL_FLAT);
 
 	glEnable(GL_DEPTH_TEST);
 	glDepthFunc(GL_LEQUAL);  //renders a fragment if its z value is less or equal of the stored value
