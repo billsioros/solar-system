@@ -68,7 +68,7 @@ function generate
     echo -e "\t@echo"
     echo -e "\t@echo \"*** Purging binaries ***\""
     echo -e "\t@echo \"***\""
-    echo -e "\trm -rv \$(PATH_BIN)"
+    echo -e "\trm -rvf \$(PATH_BIN)"
     echo -e "\t@echo \"***\""
     echo
     echo "\$(PATH_BIN)/%.exe: \$(PATH_TEST)/%.cpp \$(OBJS)"

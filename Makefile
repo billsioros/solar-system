@@ -23,7 +23,7 @@ clean:
 	@echo
 	@echo "*** Purging binaries ***"
 	@echo "***"
-	rm -rv $(PATH_BIN)
+	rm -rvf $(PATH_BIN)
 	@echo "***"
 
 $(PATH_BIN)/%.exe: $(PATH_TEST)/%.cpp $(OBJS)
