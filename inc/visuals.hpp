@@ -5,32 +5,27 @@
 #include <string>
 #include <cstdint>
 
-namespace utility
-{
-    struct Point { double x, y, z; };
-
-    struct Color { std::uint8_t red, green, blue, alpha; };
-
-    double rand(double min, double max);
-    int rand(int min, int max);
-
-    Point spherical2cartesian(double radius, double theta, double phi);
-}
-
 namespace solar_system
 {
+    namespace detail
+    {
+        struct Vector3 { double x, y, z; };
+
+        struct Color { std::uint8_t red, green, blue, alpha; };
+    }
+
     class Planet
     {
         struct Face { std::size_t fst[2], snd[2], thd[2]; };
 
-        utility::Point position;
+        detail::Vector3 position;
 
         double scale;
 
-        utility::Color color;
+        detail::Color color;
 
-        std::vector<utility::Point> vertices;
-        std::vector<utility::Point> normals;
+        std::vector<detail::Vector3> vertices;
+        std::vector<detail::Vector3> normals;
         std::vector<Face> faces;
 
     public:
@@ -38,9 +33,9 @@ namespace solar_system
         Planet
         (
             const std::string& wavefront,
-            const utility::Point& position,
+            const detail::Vector3& position,
             double scale,
-            const utility::Color& color
+            const detail::Color& color
         );
 
         void render() const;
@@ -48,19 +43,20 @@ namespace solar_system
 
     struct Star
     {
-        utility::Point position;
+        detail::Vector3 position;
 
         std::size_t radius;
 
-        utility::Color color;
+        detail::Color color;
 
     public:
 
-        Star();
-        Star(const utility::Point& position, std::size_t radius, const utility::Color& color);
+        Star(const detail::Vector3& position, std::size_t radius, const detail::Color& color);
 
         void render() const;
     };
+
+    void alloc();
 
     void setup();
     void render();

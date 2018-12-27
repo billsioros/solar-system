@@ -13,21 +13,42 @@
 #include <cstdlib>
 #include <ctime>
 
-// #include <GL/glut.h>
+#include <GL/glut.h>
 
 #define __WAVEFRONT_OBJ__ "/home/massiva/Documents/Courses/Graphics/data/planet.obj"
 
-double utility::rand(double min, double max)
+#define STAR_COUNT (100UL)
+
+static struct
 {
-    return ((max - min) * (static_cast<double>(std::rand()) / static_cast<double>(RAND_MAX)) + min);
+    solar_system::Star * sun, * ring;
+    
+    std::vector<solar_system::Star> stars;
+
+    solar_system::Planet * earth, * moon;
+} instance;
+
+static double rand_range()
+{
+    return static_cast<double>(std::rand()) / static_cast<double>(RAND_MAX);
 }
 
-int utility::rand(int min, int max)
+static double rand_range(double min, double max)
+{
+    return ((max - min) * rand_range() + min);
+}
+
+static int rand_range(int min, int max)
 {
     return ((std::rand() % (max - min + 1)) + min);
 }
 
-utility::Point utility::spherical2cartesian(double radius, double theta, double phi)
+static solar_system::detail::Vector3 spherical2cartesian
+(
+    double radius,
+    double theta,
+    double phi
+)
 {
     return
     {
@@ -40,9 +61,9 @@ utility::Point utility::spherical2cartesian(double radius, double theta, double 
 solar_system::Planet::Planet
 (
     const std::string& wavefront,
-    const utility::Point& position,
+    const detail::Vector3& position,
     double scale,
-    const utility::Color& color
+    const detail::Color& color
 )
 : position(position), scale(scale), color(color)
 {
@@ -73,14 +94,14 @@ solar_system::Planet::Planet
         }
         else if (line[0] == 'v')
         {
-            utility::Point point;
+            detail::Vector3 Vector3;
             
-            ss >> point.x; ss >> point.y; ss >> point.z;
+            ss >> Vector3.x; ss >> Vector3.y; ss >> Vector3.z;
 
             if (line[1] != 'n')
-                vertices.push_back(point);
+                vertices.push_back(Vector3);
             else
-                normals.push_back(point);
+                normals.push_back(Vector3);
         }
         else
         {
@@ -99,15 +120,7 @@ void solar_system::Planet::render() const
 {
 }
 
-solar_system::Star::Star()
-:
-position({ utility::rand(-100.0, 100.0), utility::rand(-100.0, 100.0), utility::rand(-100.0, 100.0)}),
-radius(utility::rand(10.0, 20.0)),
-color({ 255, 255, 0, static_cast<std::uint8_t>(utility::rand(128, 255)) })
-{
-}
-
-solar_system::Star::Star(const utility::Point& position, std::size_t radius, const utility::Color& color)
+solar_system::Star::Star(const detail::Vector3& position, std::size_t radius, const detail::Color& color)
 :
 position(position), radius(radius), color(color)
 {
@@ -117,16 +130,7 @@ void solar_system::Star::render() const
 {
 }
 
-struct
-{
-    const std::size_t STAR_COUNT = 100UL;
-
-    solar_system::Star * sun, * ring, * stars;
-
-    solar_system::Planet * earth, * moon;
-} instance;
-
-void solar_system::setup()
+void solar_system::alloc()
 {
     std::srand(static_cast<unsigned>(std::time(nullptr)));
 
@@ -144,12 +148,32 @@ void solar_system::setup()
         { 255, 255, 0, 127 }
     );
 
-    instance.stars = new Star[instance.STAR_COUNT];
+    for (std::size_t s = 0UL; s < STAR_COUNT; s++)
+    {
+        const detail::Vector3 position =
+        {
+            rand_range(-100.0, 100.0),
+            rand_range(-100.0, 100.0),
+            rand_range(-100.0, 100.0)
+        };
+
+        const double radius = rand_range(10.0, 20.0);
+
+        const detail::Color color =
+        {
+            255,
+            255,
+            0,
+            static_cast<std::uint8_t>(rand_range(128, 255))
+        };
+
+        instance.stars.emplace_back(position, radius, color);
+    }
 
     instance.earth = new Planet
     (
         __WAVEFRONT_OBJ__,
-        utility::spherical2cartesian(100.0, 45.0, 0.0),
+        spherical2cartesian(100.0, 45.0, 0.0),
         1.0,
         { 0, 255, 255, 255 }
     );
@@ -157,10 +181,15 @@ void solar_system::setup()
     instance.moon = new Planet
     (
         __WAVEFRONT_OBJ__,
-        utility::spherical2cartesian(300.0, 60.0, 00),
+        spherical2cartesian(300.0, 60.0, 00),
         0.5,
         { 51, 51, 51, 255 }
     );
+}
+
+void solar_system::setup()
+{
+    
 }
 
 void solar_system::render()
@@ -179,9 +208,6 @@ void solar_system::dealloc()
 
     if (instance.ring)
         delete instance.ring;
-
-    if (instance.stars)
-        delete[] instance.stars;
 
     if (instance.earth)
         delete instance.earth;
