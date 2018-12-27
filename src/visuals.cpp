@@ -4,38 +4,38 @@
 #include <vector>
 #include <string>
 #include <cstdint>
+
+#include <sstream>
 #include <fstream>
 #include <iostream>
-#include <sstream>
 
-#include <GL/glut.h>
+#include <cmath>
+#include <cstdlib>
+#include <ctime>
 
-#define INIT_FACE_ONE(one, ss)              \
-do                                          \
-{                                           \
-    ss >> one[0];                           \
-    ss >> one[1];                           \
-                                            \
-    ss.ignore(2);                           \
-} while (false)                             \
+// #include <GL/glut.h>
 
-#define INIT_FACE_ALL(face, ss)             \
-do                                          \
-{                                           \
-    INIT_FACE_ONE(face.fst, ss);            \
-                                            \
-    INIT_FACE_ONE(face.snd, ss);            \
-                                            \
-    INIT_FACE_ONE(face.thd, ss);            \
-} while (false)                             \
+#define __WAVEFRONT_OBJ__ "/home/massiva/Documents/Courses/Graphics/data/planet.obj"
 
-#define INIT_POINT(point, ss)               \
-do                                          \
-{                                           \
-    ss >> point.x;                          \
-    ss >> point.y;                          \
-    ss >> point.z;                          \
-} while (false)                             \
+double utility::rand(double min, double max)
+{
+    return ((max - min) * (static_cast<double>(std::rand()) / static_cast<double>(RAND_MAX)) + min);
+}
+
+int utility::rand(int min, int max)
+{
+    return ((std::rand() % (max - min + 1)) + min);
+}
+
+utility::Point utility::spherical2cartesian(double radius, double theta, double phi)
+{
+    return
+    {
+        radius * std::sin(theta) * std::cos(phi),
+        radius * std::sin(theta) * std::sin(phi),
+        radius * std::cos(theta)
+    };
+}
 
 solar_system::Planet::Planet
 (
@@ -50,28 +50,32 @@ solar_system::Planet::Planet
 
     if (!ifs.is_open())
     {
-        std::perror(("Failed to open file " + wavefront).c_str());
+        std::perror(("<ERR>: Failed to open file " + wavefront).c_str());
         std::exit(EXIT_FAILURE);
     }
 
-    std::string line;
+    std::string line; std::istringstream ss;
     while (std::getline(ifs, line))
     {
-        std::stringstream ss(line);
+        ss.clear(); ss.str(line); ss.ignore(3);
 
         if (line[0] == 'f')
         {
             Face face;
 
-            INIT_FACE_ALL(face, ss);
+            char skipped;
+
+            ss >> face.fst[0] >> skipped >> skipped >> face.fst[1];
+            ss >> face.snd[0] >> skipped >> skipped >> face.snd[1];
+            ss >> face.thd[0] >> skipped >> skipped >> face.thd[1];
 
             faces.push_back(face);
         }
         else if (line[0] == 'v')
         {
             utility::Point point;
-
-            INIT_POINT(point, ss);
+            
+            ss >> point.x; ss >> point.y; ss >> point.z;
 
             if (line[1] != 'n')
                 vertices.push_back(point);
@@ -86,31 +90,21 @@ solar_system::Planet::Planet
 
     if (ifs.bad())
     {
-        std::perror(("Failed to parse file " + wavefront).c_str());
+        std::perror(("<ERR>: Failed to parse file " + wavefront).c_str());
         std::exit(EXIT_FAILURE);
     }
 }
 
-void solar_system::Planet::render()
+void solar_system::Planet::render() const
 {
-    glPushMatrix();
+}
 
-    glBegin(GL_TRIANGLES);
-
-    for (const auto& face : faces)
-    {
-        auto& fstn = vertices[face.fst[0] - 1];
-        auto& sndn = vertices[face.snd[0] - 1];
-        auto& thdn = vertices[face.thd[0] - 1];
-
-        glVertex3f(fstn.x, fstn.y, fstn.z);
-        glVertex3f(sndn.x, sndn.y, sndn.z);
-        glVertex3f(thdn.x, thdn.y, thdn.z);
-    }
-
-    glEnd();
-
-    glPopMatrix();
+solar_system::Star::Star()
+:
+position({ utility::rand(-100.0, 100.0), utility::rand(-100.0, 100.0), utility::rand(-100.0, 100.0)}),
+radius(utility::rand(10.0, 20.0)),
+color({ 255, 255, 0, static_cast<std::uint8_t>(utility::rand(128, 255)) })
+{
 }
 
 solar_system::Star::Star(const utility::Point& position, std::size_t radius, const utility::Color& color)
@@ -119,88 +113,58 @@ position(position), radius(radius), color(color)
 {
 }
 
-void solar_system::Star::render()
+void solar_system::Star::render() const
 {
-
 }
+
+struct
+{
+    const std::size_t STAR_COUNT = 100UL;
+
+    solar_system::Star * sun, * ring, * stars;
+
+    solar_system::Planet * earth, * moon;
+} instance;
 
 void solar_system::setup()
 {
-	ReadFile(&md);
+    std::srand(static_cast<unsigned>(std::time(nullptr)));
 
-	//Parameter handling
-	glShadeModel(GL_SMOOTH);
+    instance.sun = new Star
+    (
+        { 0.0, 0.0, 0.0 },
+        100UL,
+        { 255, 255, 0, 255 }
+    );
 
-	glEnable(GL_DEPTH_TEST);
-	glDepthFunc(GL_LEQUAL);  //renders a fragment if its z value is less or equal of the stored value
-	glClearDepth(1);
+    instance.ring = new Star
+    (
+        { 0.0, 0.0, 0.0 },
+        150UL,
+        { 255, 255, 0, 127 }
+    );
 
-	// polygon rendering mode
-	glEnable(GL_COLOR_MATERIAL);
-	glColorMaterial( GL_FRONT, GL_AMBIENT_AND_DIFFUSE );
+    instance.stars = new Star[instance.STAR_COUNT];
 
-	//Set up light source
-	GLfloat light_position[] = { 0.0, 30.0, 50.0, 0.0 };
-	glLightfv( GL_LIGHT0, GL_POSITION, light_position);
+    instance.earth = new Planet
+    (
+        __WAVEFRONT_OBJ__,
+        utility::spherical2cartesian(100.0, 45.0, 0.0),
+        1.0,
+        { 0, 255, 255, 255 }
+    );
 
-	GLfloat ambientLight[] = { 0.3, 0.3, 0.3, 1.0 };
-	GLfloat diffuseLight[] = { 0.8, 0.8, 0.8, 1.0 };
-	GLfloat specularLight[] = { 1.0, 1.0, 1.0, 1.0 };
-
-
-	glLightfv( GL_LIGHT0, GL_AMBIENT, ambientLight );
-	glLightfv( GL_LIGHT0, GL_DIFFUSE, diffuseLight );
-
-
-	glEnable(GL_LIGHTING);
-	glEnable(GL_LIGHT0);
-
-	glPolygonMode(GL_FRONT_AND_BACK,GL_FILL);
-
-	glEnable(GL_CULL_FACE);
-	glFrontFace(GL_CW);
-
-	//01
-	glFrontFace(GL_CCW);
-
-
-	// Black background
-	glClearColor(0.0f,0.0f,0.0f,1.0f);
-
+    instance.moon = new Planet
+    (
+        __WAVEFRONT_OBJ__,
+        utility::spherical2cartesian(300.0, 60.0, 00),
+        0.5,
+        { 51, 51, 51, 255 }
+    );
 }
 
 void solar_system::render()
 {
-  //CLEARS FRAME BUFFER ie COLOR BUFFER& DEPTH BUFFER (1.0)
-  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);  // Clean up the colour of the window
-													   // and the depth buffer
-  glMatrixMode(GL_MODELVIEW);
-  glLoadIdentity();
-
-
-  glTranslatef(0,0,-100);
-  glTranslatef(tx,0.0,0.0);
-  glRotatef(rotx,1,0,0);
-
-
-
-  //(01)
-  glColor3f(0.3, 0.2, 0.9);                            // Set drawing colour
-  DisplayModel(md);
-
-  //(02)
-  //glColor3f(0.8, 0.1, 0.1);
-  //glTranslatef(-20.0,0.0,0.0);
-  //keimeno("Dokimastiko keimeno",0.05f);
-
-  //(03)
-  //glColor3f(red, green, blue);                            // Set drawing colour
-  //glutSolidTeapot(20.0);
-
-
-  glutSwapBuffers();             // All drawing commands applied to the
-                                 // hidden buffer, so now, bring forward
-                                 // the hidden buffer and hide the visible one
 }
 
 void solar_system::update()
@@ -208,7 +172,20 @@ void solar_system::update()
     // code
 }
 
-void solar_system::keyboard(unsigned char key, int mousex, int mousey)
+void solar_system::dealloc()
 {
-    // code
+    if (instance.sun)
+        delete instance.sun;
+
+    if (instance.ring)
+        delete instance.ring;
+
+    if (instance.stars)
+        delete[] instance.stars;
+
+    if (instance.earth)
+        delete instance.earth;
+
+    if (instance.moon)
+        delete instance.moon;
 }
