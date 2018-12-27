@@ -3,7 +3,7 @@
 
 #include <iostream>
 
-// #include <GL/glut.h>
+#include <GL/glut.h>
 
 void resize(int width, int height);
 
