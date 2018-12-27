@@ -20,7 +20,6 @@ int main(int argc, char * argv[])
 
 void resize(int width, int height)
 {
-    // define the visible area of the window ( in pixels )
     if (!height)
         height = 1;
 
