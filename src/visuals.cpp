@@ -124,36 +124,27 @@ void solar_system::Star::render() const
 {
 }
 
-static const std::size_t STAR_COUNT = 100UL;
-
-static solar_system::Star * sun;
-static solar_system::Star * ring;
-static solar_system::Star * stars;
-
-static solar_system::Planet * earth;
-static solar_system::Planet * moon;
-
 void solar_system::setup()
 {
     std::srand(static_cast<unsigned>(std::time(nullptr)));
 
-    sun = new Star
+    instance.sun = new Star
     (
         { 0.0, 0.0, 0.0 },
         100UL,
         { 255, 255, 0, 255 }
     );
 
-    ring = new Star
+    instance.ring = new Star
     (
         { 0.0, 0.0, 0.0 },
         150UL,
         { 255, 255, 0, 127 }
     );
 
-    stars = new Star[STAR_COUNT];
+    instance.stars = new Star[instance.STAR_COUNT];
 
-    earth = new Planet
+    instance.earth = new Planet
     (
         __WAVEFRONT_OBJ__,
         utility::spherical2cartesian(100.0, 45.0, 0.0),
@@ -161,7 +152,7 @@ void solar_system::setup()
         { 0, 255, 255, 255 }
     );
 
-    moon = new Planet
+    instance.moon = new Planet
     (
         __WAVEFRONT_OBJ__,
         utility::spherical2cartesian(300.0, 60.0, 00),
@@ -177,4 +168,15 @@ void solar_system::render()
 void solar_system::update()
 {
     // code
+}
+
+void solar_system::dealloc()
+{
+    delete instance.sun;
+    delete instance.ring;
+
+    delete[] instance.stars;
+
+    delete instance.earth;
+    delete instance.moon;
 }

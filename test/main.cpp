@@ -11,6 +11,10 @@ void inspect(unsigned char key, int mousex, int mousey);
 
 int main(int argc, char * argv[])
 {
+    solar_system::setup();
+
+    solar_system::dealloc();
+
     return 0;
 }
 
