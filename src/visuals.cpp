@@ -15,10 +15,13 @@
 
 #include <GL/glut.h>
 
+// File system tree specific Wavefront .obj path
 #define __WAVEFRONT_OBJ__ "/home/massiva/Documents/Courses/Graphics/data/planet.obj"
 
+// Number of stars to be created
 #define STAR_COUNT (100UL)
 
+// A struct containing all the information about our simulation
 static struct
 {
     solar_system::Star * sun, * ring;
@@ -28,21 +31,26 @@ static struct
     solar_system::Planet * earth, * moon;
 } instance;
 
+// Return a random double between 0 and 1
 static double rand_range()
 {
     return static_cast<double>(std::rand()) / static_cast<double>(RAND_MAX);
 }
 
+// Return a random double in the range [min, max]
 static double rand_range(double min, double max)
 {
     return ((max - min) * rand_range() + min);
 }
 
+// Return a random int in the range [min, max]
 static int rand_range(int min, int max)
 {
     return ((std::rand() % (max - min + 1)) + min);
 }
 
+// Return a point whose cartesian coordinates
+// correspond to the spherical coordinates specified
 static solar_system::detail::Vector3 spherical2cartesian
 (
     double radius,
@@ -58,6 +66,10 @@ static solar_system::detail::Vector3 spherical2cartesian
     };
 }
 
+// Planet class
+// Parse the specified wavefront file
+// and save all the information necessary
+// to render it as a 3d object
 solar_system::Planet::Planet
 (
     const std::string& wavefront,
@@ -120,6 +132,9 @@ void solar_system::Planet::render() const
 {
 }
 
+// Star class
+// Save all the necessary info
+// to render the star as a simple sphere
 solar_system::Star::Star(const detail::Vector3& position, std::size_t radius, const detail::Color& color)
 :
 position(position), radius(radius), color(color)
@@ -130,6 +145,7 @@ void solar_system::Star::render() const
 {
 }
 
+// Allocate the necessary resources
 void solar_system::alloc()
 {
     std::srand(static_cast<unsigned>(std::time(nullptr)));
@@ -201,6 +217,7 @@ void solar_system::update()
     // code
 }
 
+// Deallocate all the resources
 void solar_system::dealloc()
 {
     if (instance.sun)
