@@ -62,15 +62,6 @@ namespace solar_system
         void render() const;
     };
 
-    struct
-    {
-        const std::size_t STAR_COUNT = 100UL;
-
-        Star * sun, * ring, * stars;
-
-        Planet * earth, * moon;
-    } instance;
-
     void setup();
     void render();
     void update();

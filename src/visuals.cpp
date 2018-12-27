@@ -13,7 +13,7 @@
 #include <cstdlib>
 #include <ctime>
 
-#include <GL/glut.h>
+// #include <GL/glut.h>
 
 #define __WAVEFRONT_OBJ__ "/home/massiva/Documents/Courses/Graphics/data/planet.obj"
 
@@ -37,25 +37,6 @@ utility::Point utility::spherical2cartesian(double radius, double theta, double 
     };
 }
 
-#define INIT_POINT(line, point)                         \
-do                                                      \
-{                                                       \
-    std::istringstream ss(line);                        \
-                                                        \
-    ss >> point.x; ss >> point.y; ss >> point.z;        \
-} while (false)                                         \
-
-#define INIT_FACE(line, face)                           \
-do                                                      \
-{                                                       \
-    std::istringstream ss(line);                        \
-                                                        \
-    ss >> face.fst[0]; ss >> face.fst[1];               \
-    ss >> face.snd[0]; ss >> face.snd[1];               \
-    ss >> face.thd[0]; ss >> face.thd[1];               \
-                                                        \
-} while (false)                                         \
-
 solar_system::Planet::Planet
 (
     const std::string& wavefront,
@@ -73,16 +54,28 @@ solar_system::Planet::Planet
         std::exit(EXIT_FAILURE);
     }
 
-    std::string line;
+    std::string line; std::istringstream ss;
     while (std::getline(ifs, line))
     {
+        ss.clear(); ss.str(line); ss.ignore(3);
+
         if (line[0] == 'f')
         {
-            Face face; INIT_FACE(line, face); faces.push_back(face);
+            Face face;
+
+            char skipped;
+
+            ss >> face.fst[0] >> skipped >> skipped >> face.fst[1];
+            ss >> face.snd[0] >> skipped >> skipped >> face.snd[1];
+            ss >> face.thd[0] >> skipped >> skipped >> face.thd[1];
+
+            faces.push_back(face);
         }
         else if (line[0] == 'v')
         {
-            utility::Point point; INIT_POINT(line, point);
+            utility::Point point;
+            
+            ss >> point.x; ss >> point.y; ss >> point.z;
 
             if (line[1] != 'n')
                 vertices.push_back(point);
@@ -123,6 +116,15 @@ position(position), radius(radius), color(color)
 void solar_system::Star::render() const
 {
 }
+
+struct
+{
+    const std::size_t STAR_COUNT = 100UL;
+
+    solar_system::Star * sun, * ring, * stars;
+
+    solar_system::Planet * earth, * moon;
+} instance;
 
 void solar_system::setup()
 {
@@ -172,11 +174,18 @@ void solar_system::update()
 
 void solar_system::dealloc()
 {
-    delete instance.sun;
-    delete instance.ring;
+    if (instance.sun)
+        delete instance.sun;
 
-    delete[] instance.stars;
+    if (instance.ring)
+        delete instance.ring;
 
-    delete instance.earth;
-    delete instance.moon;
+    if (instance.stars)
+        delete[] instance.stars;
+
+    if (instance.earth)
+        delete instance.earth;
+
+    if (instance.moon)
+        delete instance.moon;
 }
