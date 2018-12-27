@@ -102,7 +102,7 @@ solar_system::Planet::Planet
     }
 }
 
-void solar_system::Planet::render()
+void solar_system::Planet::render() const
 {
     glColor4b(color.red, color.green, color.blue, color.alpha);
 
@@ -134,9 +134,9 @@ void solar_system::Planet::render()
 
 solar_system::Star::Star()
 :
-position({ utility::rand(-100, 100), utility::rand(-100, 100), utility::rand(-100, 100)}),
+position({ utility::rand(-100.0, 100.0), utility::rand(-100.0, 100.0), utility::rand(-100.0, 100.0)}),
 radius(utility::rand(10.0, 20.0)),
-color({ 255, 255, 0, utility::rand(128, 255) })
+color({ 255, 255, 0, static_cast<std::uint8_t>(utility::rand(128, 255)) })
 {
 }
 
@@ -146,7 +146,7 @@ position(position), radius(radius), color(color)
 {
 }
 
-void solar_system::Star::render()
+void solar_system::Star::render() const
 {
     glColor4b(color.red, color.green, color.blue, color.alpha);
 
@@ -188,7 +188,7 @@ void solar_system::setup()
         { 255, 255, 0, 127 }
     );
 
-	stars = new Star[STAR_COUNT];
+    stars = new Star[STAR_COUNT];
 
     earth = new Planet
     (
@@ -206,86 +206,53 @@ void solar_system::setup()
         { 51, 51, 51, 255 }
     );
 
-	glShadeModel(GL_FLAT);
+    glShadeModel(GL_FLAT);
 
-	glEnable(GL_DEPTH_TEST);
-	glDepthFunc(GL_LEQUAL);  //renders a fragment if its z value is less or equal of the stored value
-	glClearDepth(1);
+    glEnable(GL_DEPTH_TEST);
+    glDepthFunc(GL_LEQUAL);  //renders a fragment if its z value is less or equal of the stored value
+    glClearDepth(1);
 
-	// polygon rendering mode
-	glEnable(GL_COLOR_MATERIAL);
-	glColorMaterial( GL_FRONT, GL_AMBIENT_AND_DIFFUSE );
+    // polygon rendering mode
+    glEnable(GL_COLOR_MATERIAL);
+    glColorMaterial( GL_FRONT, GL_AMBIENT_AND_DIFFUSE );
 
-	//Set up light source
-	GLfloat light_position[] = { 0.0, 30.0, 50.0, 0.0 };
-	glLightfv( GL_LIGHT0, GL_POSITION, light_position);
+    glPolygonMode(GL_FRONT_AND_BACK,GL_FILL);
 
-	GLfloat ambientLight[] = { 0.3, 0.3, 0.3, 1.0 };
-	GLfloat diffuseLight[] = { 0.8, 0.8, 0.8, 1.0 };
-	GLfloat specularLight[] = { 1.0, 1.0, 1.0, 1.0 };
+    glEnable(GL_CULL_FACE);
+    glFrontFace(GL_CW);
 
-
-	glLightfv( GL_LIGHT0, GL_AMBIENT, ambientLight );
-	glLightfv( GL_LIGHT0, GL_DIFFUSE, diffuseLight );
+    //01
+    glFrontFace(GL_CCW);
 
 
-	glEnable(GL_LIGHTING);
-	glEnable(GL_LIGHT0);
-
-	glPolygonMode(GL_FRONT_AND_BACK,GL_FILL);
-
-	glEnable(GL_CULL_FACE);
-	glFrontFace(GL_CW);
-
-	//01
-	glFrontFace(GL_CCW);
-
-
-	// Black background
-	glClearColor(0.0f,0.0f,0.0f,1.0f);
+    // Black background
+    glClearColor(0.0f,0.0f,0.0f,1.0f);
 
 }
 
 void solar_system::render()
 {
-  //CLEARS FRAME BUFFER ie COLOR BUFFER& DEPTH BUFFER (1.0)
-  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);  // Clean up the colour of the window
-													   // and the depth buffer
-  glMatrixMode(GL_MODELVIEW);
-  glLoadIdentity();
+    //CLEARS FRAME BUFFER ie COLOR BUFFER& DEPTH BUFFER (1.0)
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+    sun->render();
 
-  glTranslatef(0,0,-100);
-  glTranslatef(tx,0.0,0.0);
-  glRotatef(rotx,1,0,0);
+    ring->render();
 
+    for (std::size_t i = 0UL; i < STAR_COUNT; i++)
+        stars[i].render();
 
+    earth->render();
 
-  //(01)
-  glColor3f(0.3, 0.2, 0.9);                            // Set drawing colour
-  DisplayModel(md);
+    moon->render();
 
-  //(02)
-  //glColor3f(0.8, 0.1, 0.1);
-  //glTranslatef(-20.0,0.0,0.0);
-  //keimeno("Dokimastiko keimeno",0.05f);
-
-  //(03)
-  //glColor3f(red, green, blue);                            // Set drawing colour
-  //glutSolidTeapot(20.0);
-
-
-  glutSwapBuffers();             // All drawing commands applied to the
-                                 // hidden buffer, so now, bring forward
-                                 // the hidden buffer and hide the visible one
+    // All drawing commands applied to the
+    // hidden buffer, so now, bring forward
+    // the hidden buffer and hide the visible one
+    glutSwapBuffers();
 }
 
 void solar_system::update()
-{
-    // code
-}
-
-void solar_system::keyboard(unsigned char key, int mousex, int mousey)
 {
     // code
 }

@@ -14,7 +14,7 @@ function confirm
     fi
 }
 
-function grepinc
+function grep_include_directives
 {
 	local includes=$(grep -Eo '["<].*\.[hi]pp[">]' $1)
 
@@ -36,7 +36,7 @@ function grepinc
 			continue
 		else
 			visited["$include"]=true
-			grepinc "${meta[PATH_INC]}/$include"
+			grep_include_directives "${meta[PATH_INC]}/$include"
 		fi
 	done
 }
@@ -85,7 +85,7 @@ function generate
     do
         declare -A visited
 
-        grepinc "${meta[PATH_SRC]}/$file"; includes=${!visited[@]}
+        grep_include_directives "${meta[PATH_SRC]}/$file"; includes=${!visited[@]}
 
         unset visited
 
