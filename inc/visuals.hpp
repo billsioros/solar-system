@@ -3,7 +3,6 @@
 
 #include <vector>
 #include <string>
-#include <cstdint>
 
 namespace solar_system
 {
@@ -11,7 +10,7 @@ namespace solar_system
     {
         struct Vector3 { double x, y, z; };
 
-        struct Color { std::uint8_t red, green, blue, alpha; };
+        struct Color { double red, green, blue, alpha; };
     }
 
     class Planet
@@ -45,13 +44,13 @@ namespace solar_system
     {
         detail::Vector3 position;
 
-        std::size_t radius;
+        double radius;
 
         detail::Color color;
 
     public:
 
-        Star(const detail::Vector3& position, std::size_t radius, const detail::Color& color);
+        Star(const detail::Vector3& position, double radius, const detail::Color& color);
 
         void render() const;
     };
