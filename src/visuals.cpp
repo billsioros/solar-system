@@ -19,7 +19,7 @@
 #define __WAVEFRONT_OBJ__ "/home/massiva/Documents/Courses/Graphics/data/planet.obj"
 
 // Number of stars to be created
-#define STAR_COUNT (100UL)
+#define STAR_COUNT (50UL)
 
 // A struct containing all the information about our simulation
 static struct
@@ -43,26 +43,21 @@ static double rand_range(double min, double max)
     return ((max - min) * rand_range() + min);
 }
 
-// Return a random int in the range [min, max]
-static int rand_range(int min, int max)
-{
-    return ((std::rand() % (max - min + 1)) + min);
-}
-
 // Return a point whose cartesian coordinates
 // correspond to the spherical coordinates specified
 static solar_system::detail::Vector3 spherical2cartesian
 (
     double radius,
     double theta,
-    double phi
+    double phi,
+    const solar_system::detail::Vector3& center = { 0.0, 0.0, 0.0 }
 )
 {
     return
     {
-        radius * std::sin(theta) * std::cos(phi),
-        radius * std::sin(theta) * std::sin(phi),
-        radius * std::cos(theta)
+        radius * std::sin(theta) * std::cos(phi) + center.x,
+        radius * std::sin(theta) * std::sin(phi) + center.y,
+        radius * std::cos(theta) + center.z
     };
 }
 
@@ -117,7 +112,7 @@ solar_system::Planet::Planet
         }
         else
         {
-            std::cerr << "<WRN>: Ignoring line " + line << std::endl;
+            std::cerr << "<MSG>: Ignoring line " + line << std::endl;
         }
     }
 
@@ -130,12 +125,36 @@ solar_system::Planet::Planet
 
 void solar_system::Planet::render() const
 {
+    glColor4f(color.red, color.green, color.blue, color.alpha);
+
+    glPushMatrix();
+    
+    glTranslated(position.x, position.y, position.z);
+
+    glScaled(scale, scale, scale);
+
+    glBegin(GL_TRIANGLES);
+
+    for (const auto& face : faces)
+    {
+        const auto& v1 = vertices[face.fst[0] - 1];
+        const auto& v2 = vertices[face.snd[0] - 1];
+        const auto& v3 = vertices[face.thd[0] - 1];
+
+        glVertex3d(v1.x, v1.y, v1.z);
+        glVertex3d(v2.x, v2.y, v2.z);
+        glVertex3d(v3.x, v3.y, v3.z);
+    }
+
+    glEnd();
+
+    glPopMatrix();
 }
 
 // Star class
 // Save all the necessary info
 // to render the star as a simple sphere
-solar_system::Star::Star(const detail::Vector3& position, std::size_t radius, const detail::Color& color)
+solar_system::Star::Star(const detail::Vector3& position, double radius, const detail::Color& color)
 :
 position(position), radius(radius), color(color)
 {
@@ -143,6 +162,17 @@ position(position), radius(radius), color(color)
 
 void solar_system::Star::render() const
 {
+    glColor4f(color.red, color.green, color.blue, color.alpha);
+
+    glPushMatrix();
+
+    glLoadIdentity();
+
+    glTranslated(position.x, position.y, position.z);
+
+    glutSolidSphere(radius, 50, 50);
+
+    glPopMatrix();
 }
 
 // Allocate the necessary resources
@@ -150,57 +180,51 @@ void solar_system::alloc()
 {
     std::srand(static_cast<unsigned>(std::time(nullptr)));
 
-    instance.sun = new Star
-    (
-        { 0.0, 0.0, 0.0 },
-        100UL,
-        { 255, 255, 0, 255 }
-    );
+    const detail::Vector3 sun_position = { 0.0, 0.0, -75.0 };
 
-    instance.ring = new Star
-    (
-        { 0.0, 0.0, 0.0 },
-        150UL,
-        { 255, 255, 0, 127 }
-    );
+    const double sun_radius = 10.0;
+
+    detail::Vector3 position = sun_position;
+
+    double radius = sun_radius;
+
+    detail::Color color = { 0.9, 0.5, 0.0, 1.0 };
+
+    instance.sun = new Star(position, radius, color);
+
+    radius *= 5.0 / 4.0;
+
+    color = { 1.0, 1.0, 1.0, color.alpha / 4 };
+
+    instance.ring = new Star(position, radius, color);
 
     for (std::size_t s = 0UL; s < STAR_COUNT; s++)
     {
-        const detail::Vector3 position =
+        position =
         {
-            rand_range(-100.0, 100.0),
-            rand_range(-100.0, 100.0),
-            rand_range(-100.0, 100.0)
+            rand_range(-180.0, 180.0),
+            rand_range(-90.0, 90.0),
+            rand_range(-200.0, -300.0)
         };
 
-        const double radius = rand_range(10.0, 20.0);
+        radius = rand_range(1.5, 2.0);
 
-        const detail::Color color =
-        {
-            255,
-            255,
-            0,
-            static_cast<std::uint8_t>(rand_range(128, 255))
-        };
+       color = { 1.0, 0.9, 0.6, 1.0 };
 
         instance.stars.emplace_back(position, radius, color);
     }
 
-    instance.earth = new Planet
-    (
-        __WAVEFRONT_OBJ__,
-        spherical2cartesian(100.0, 45.0, 0.0),
-        1.0,
-        { 0, 255, 255, 255 }
-    );
+    position = spherical2cartesian(4 * sun_radius, 90.0, 0.0, sun_position);
 
-    instance.moon = new Planet
-    (
-        __WAVEFRONT_OBJ__,
-        spherical2cartesian(300.0, 60.0, 00),
-        0.5,
-        { 51, 51, 51, 255 }
-    );
+    color = { 0.0, 1.0, 1.0, 1.0 };
+
+    instance.earth = new Planet(__WAVEFRONT_OBJ__, position, 0.00625, color);
+
+    position = spherical2cartesian(4 * sun_radius, 90.0, 0.0, position);
+
+    color = { 0.3, 0.3, 0.3, 1.0 };
+
+    instance.moon = new Planet(__WAVEFRONT_OBJ__, position, 0.003125, color);
 }
 
 void solar_system::setup()
@@ -210,6 +234,22 @@ void solar_system::setup()
 
 void solar_system::render()
 {
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+    glLoadIdentity();
+
+    for (const auto& star : instance.stars)
+        star.render();
+
+    instance.ring->render();
+
+    instance.sun->render();
+
+    instance.earth->render();
+
+    instance.moon->render();
+
+    glutSwapBuffers();
 }
 
 void solar_system::update()

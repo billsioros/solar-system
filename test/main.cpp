@@ -11,7 +11,25 @@ void inspect(unsigned char key, int mousex, int mousey);
 
 int main(int argc, char * argv[])
 {
+    solar_system::alloc();
+
     solar_system::setup();
+
+    glutInit(&argc, argv);
+
+    glutInitWindowPosition(50, 50);
+
+    glutInitWindowSize(1280, 720);
+
+    glutInitDisplayMode(GLUT_RGBA | GLUT_DOUBLE | GLUT_DEPTH);
+
+    glutCreateWindow("Solar system visualization");
+
+    glutDisplayFunc(solar_system::render);
+
+    glutReshapeFunc(resize);
+
+    glutMainLoop();
 
     solar_system::dealloc();
 
@@ -23,8 +41,17 @@ void resize(int width, int height)
     if (!height)
         height = 1;
 
-    if (!width)
-        width = 1;
+    const float ratio = static_cast<float>(width) / static_cast<float>(height);
+
+    glMatrixMode(GL_PROJECTION);
+
+    glLoadIdentity();
+
+    glViewport(0, 0, width, height);
+
+    gluPerspective(45, ratio, 0, 300);
+
+    glMatrixMode(GL_MODELVIEW);
 }
 
 void inspect(unsigned char key, int mousex, int mousey)
