@@ -11,9 +11,9 @@ void inspect(unsigned char key, int mousex, int mousey);
 
 int main(int argc, char * argv[])
 {
-    solar_system::alloc();
-
     solar_system::setup();
+    
+    solar_system::alloc();
 
     glutInit(&argc, argv);
 
@@ -26,6 +26,8 @@ int main(int argc, char * argv[])
     glutCreateWindow("Solar system visualization");
 
     glutDisplayFunc(solar_system::render);
+
+    glutIdleFunc(solar_system::update);
 
     glutReshapeFunc(resize);
 
