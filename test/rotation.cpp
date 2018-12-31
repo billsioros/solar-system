@@ -18,6 +18,14 @@ int main(int argc, char * argv[])
 
     glutCreateWindow("Solar system visualization");
 
+    glEnable(GL_DEPTH_TEST);
+
+    glDepthFunc(GL_LESS);
+
+    glEnable(GL_BLEND);
+
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
     glutDisplayFunc(render);
 
     glutIdleFunc(update);
@@ -37,6 +45,8 @@ void render()
 
     glLoadIdentity();
 
+    glColor4f(1.0f, 1.0f, 0.0f, 1.0f);
+
     glPushMatrix();
 
     glTranslatef(0.0, 0.0, -50.0);
@@ -46,6 +56,8 @@ void render()
     glutSolidCube(5.0);
 
     glPopMatrix();
+
+    glColor4f(1.0f, 0.0f, 1.0f, 0.2f);
 
     glPushMatrix();
 
