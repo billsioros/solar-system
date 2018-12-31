@@ -46,7 +46,7 @@ static detail::Vector3 spherical
 }
 
 // Wavefront struct
-solar_system::Planet::Wavefront::Wavefront(const char * wavefront_path)
+detail::Wavefront::Wavefront(const char * wavefront_path)
 {
     std::ifstream ifs(wavefront_path);
 
@@ -97,7 +97,7 @@ solar_system::Planet::Wavefront::Wavefront(const char * wavefront_path)
     }
 }
 
-void solar_system::Planet::Wavefront::render() const
+void detail::Wavefront::render() const
 {
     glBegin(GL_TRIANGLES);
 
@@ -115,22 +115,20 @@ void solar_system::Planet::Wavefront::render() const
     glEnd();
 }
 
-// Body class
+// Object class
 // Save all the necessary info
 // to render the star as a simple sphere
-solar_system::Body::Body(const detail::Vector3& position, float size, const detail::Color& color)
+solar_system::Object::Object(const detail::Vector3& position, float size, const detail::Color& color)
 :
 position(position), size(size), color(color)
 {
 }
 
-void solar_system::Body::render() const
+void solar_system::Object::render() const
 {
     glColor4f(color.red, color.green, color.blue, color.alpha);
 
     glPushMatrix();
-
-    glLoadIdentity();
 
     glTranslatef(position.x, position.y, position.z);
 
@@ -139,7 +137,7 @@ void solar_system::Body::render() const
     glPopMatrix();
 }
 
-void solar_system::Body::update()
+void solar_system::Object::update()
 {
     // code
 }
@@ -148,19 +146,19 @@ void solar_system::Body::update()
 // Parse the specified wavefront file
 // and save all the information necessary
 // to render it as a 3d object
+const detail::Wavefront * solar_system::Planet::wavefront = nullptr;
+
 solar_system::Planet::Planet
 (
     const detail::Vector3& position,
     float size,
     const detail::Color& color,
-    const char * wavefront_path,
-    const Body * rotating,
+    const Object * rotating,
     float angle,
     float velocity
 )
 :
-Body(position, size, color),
-wavefront(wavefront_path),
+Object(position, size, color),
 rotating(rotating),
 angle(angle),
 velocity(velocity)
@@ -179,7 +177,7 @@ void solar_system::Planet::render() const
 
     glRotatef(angle, rotating->position.x, rotating->position.y, rotating->position.z);
 
-    wavefront.render();
+    wavefront->render();
 
     glPopMatrix();
 }
@@ -189,9 +187,7 @@ void solar_system::Planet::update()
     angle += (angle < 360.0f ? velocity : -360.0f);
 }
 
-std::vector<solar_system::Body *> bodies;
-
-#define __WAVEFRONT_PATh__   "/home/massiva/Documents/Courses/Graphics/data/planet.obj"
+#define __WAVEFRONT_PATH__ "/home/massiva/Documents/Courses/Graphics/data/planet.obj"
 
 #define STAR_COUNT          (50UL)
 
@@ -220,40 +216,42 @@ std::vector<solar_system::Body *> bodies;
 #define MOON_VELOCITY      (EARTH_VELOCITY / 2.0f)
 
 // Allocate the necessary resources
+static std::vector<solar_system::Object *> objects;
+
 void solar_system::alloc()
 {
+    Planet::wavefront = new detail::Wavefront(__WAVEFRONT_PATH__);
+
     std::srand(static_cast<unsigned>(std::time(nullptr)));
 
     for (std::size_t s = 0UL; s < STAR_COUNT; s++)
-        bodies.push_back(new Body(STAR_POSITION, STAR_SIZE, STAR_COLOR));
+        objects.push_back(new Star(STAR_POSITION, STAR_SIZE, STAR_COLOR));
 
-    bodies.push_back(new Body(RING_POSITION, RING_SIZE, RING_COLOR));
+    objects.push_back(new Star(RING_POSITION, RING_SIZE, RING_COLOR));
 
-    bodies.push_back(new Body(SUN_POSITION, SUN_SIZE, SUN_COLOR));
+    objects.push_back(new Star(SUN_POSITION, SUN_SIZE, SUN_COLOR));
 
-    bodies.push_back
+    objects.push_back
     (
         new Planet
         (
             EARTH_POSITION,
             EARTH_SIZE,
             EARTH_COLOR,
-            __WAVEFRONT_PATh__,
-            bodies[STAR_COUNT + 1UL],
+            objects[STAR_COUNT + 1UL],
             EARTH_ANGLE,
             EARTH_VELOCITY
         )
     );
 
-    bodies.push_back
+    objects.push_back
     (
         new Planet
         (
             MOON_POSITION,
             MOON_SIZE,
             MOON_COLOR,
-            __WAVEFRONT_PATh__,
-            bodies[STAR_COUNT + 2UL],
+            objects[STAR_COUNT + 2UL],
             MOON_ANGLE,
             MOON_VELOCITY
         )
@@ -262,12 +260,10 @@ void solar_system::alloc()
 
 void solar_system::dealloc()
 {
-    for (const auto body_ptr : bodies)
-        delete body_ptr;
-}
+    delete Planet::wavefront;
 
-void solar_system::setup()
-{
+    for (const auto body_ptr : objects)
+        delete body_ptr;
 }
 
 void solar_system::render()
@@ -276,7 +272,7 @@ void solar_system::render()
 
     glLoadIdentity();
 
-    for (const auto body_ptr : bodies)
+    for (const auto body_ptr : objects)
         body_ptr->render();
 
     glutSwapBuffers();
@@ -284,7 +280,7 @@ void solar_system::render()
 
 void solar_system::update()
 {
-    for (auto body_ptr : bodies)
+    for (auto body_ptr : objects)
         body_ptr->update();
 
     glutPostRedisplay();

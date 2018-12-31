@@ -25,11 +25,27 @@ namespace detail
         red(red), green(green), blue(blue), alpha(alpha)
         {}
     };
+
+    class Wavefront
+    {
+        struct Face { std::size_t fst[2], snd[2], thd[2]; };
+
+        std::vector<detail::Vector3> vertices;
+        std::vector<detail::Vector3> normals;
+        std::vector<Face> faces;
+
+    public:
+
+        Wavefront(const char * wavefront_path);
+
+        void render() const;
+
+    };
 }
 
 namespace solar_system
 {
-    class Body
+    class Object
     {
         friend class Planet;
 
@@ -43,44 +59,33 @@ namespace solar_system
 
     public:
 
-        Body(const detail::Vector3& position, float size, const detail::Color& color);
+        Object(const detail::Vector3& position, float size, const detail::Color& color);
 
-        virtual ~Body() {};
+        virtual ~Object() {};
 
         virtual void render() const;
 
         virtual void update();
     };
 
-    class Planet : public Body
-    {
-        struct Wavefront
-        {
-            struct Face { std::size_t fst[2], snd[2], thd[2]; };
+    using Star = Object;
 
-            std::vector<detail::Vector3> vertices;
-            std::vector<detail::Vector3> normals;
-            std::vector<Face> faces;
-
-            Wavefront(const char * wavefront_path);
-
-            void render() const;
-
-        } wavefront;
-        
-        const Body * rotating;
+    class Planet : public Object
+    {        
+        const Object * rotating;
 
         float angle, velocity;
 
     public:
         
+        static const detail::Wavefront * wavefront;
+
         Planet
         (
             const detail::Vector3& position,
             float size,
             const detail::Color& color,
-            const char * wavefront_path,
-            const Body * rotating,
+            const Object * rotating,
             float angle,
             float velocity
         );
@@ -95,7 +100,6 @@ namespace solar_system
     void alloc();
     void dealloc();
 
-    void setup();
     void render();
     void update();
-}
+};
