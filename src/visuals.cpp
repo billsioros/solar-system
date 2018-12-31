@@ -171,13 +171,11 @@ void solar_system::Planet::render() const
 
     glPushMatrix();
     
-    glTranslatef(-rotating->position.x, -rotating->position.y, -rotating->position.z);
+    glTranslatef(rotating->position.x, rotating->position.y, rotating->position.z);
 
     glRotatef(angle, 0.0f, 1.0f, 0.0f);
 
-    glTranslatef(rotating->position.x, rotating->position.y, rotating->position.z);
-
-    glTranslatef(position.x, position.y, position.z);
+    glTranslatef(15.0, 0.0, 0.0);
 
     glScalef(size, size, size);
 

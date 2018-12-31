@@ -49,7 +49,7 @@ void resize(int width, int height)
 
     glViewport(0, 0, width, height);
 
-    gluPerspective(45, ratio, 0, 300);
+    gluPerspective(45, ratio, 20, 300);
 
     glMatrixMode(GL_MODELVIEW);
 }
