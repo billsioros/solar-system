@@ -34,7 +34,7 @@ static detail::Vector3 spherical
     float distance,
     float theta,
     float phi,
-    const detail::Vector3& center = { 0.0f, 0.0f, 0.0f }
+    const detail::Vector3& center
 )
 {
     return
@@ -224,12 +224,10 @@ void solar_system::Planet::render() const
     glColor4f(color.red, color.green, color.blue, color.alpha);
 
     glPushMatrix();
-    
-    glTranslatef(rotating->position.x, rotating->position.y, rotating->position.z);
 
-    glRotatef(theta, 0.0f, 1.0f, 0.0f);
+    glTranslatef(position.x, position.y, position.z);
 
-    glTranslatef(distance, 0.0, 0.0);
+    // std::cout << "[" << position.x << ", " << position.y << ", " << position.z << "]" << std::endl;
 
     glScalef(size, size, size);
 
@@ -258,27 +256,27 @@ void solar_system::Planet::update()
 #define RING_COLOR          detail::Color(1.0f, 1.0f, 1.0f, 0.25f)
 #define RING_DALPHA         (0.001f)
 
-#define SUN_POSITION        detail::Vector3(0.0f, 0.0f, -75.0f)
-#define SUN_SIZE            (10.0f)
+#define SUN_POSITION        detail::Vector3(0.0f, 0.0f, -100.0f)
+#define SUN_SIZE            (20.0f)
 #define SUN_COLOR           detail::Color(0.9f, 0.5f, 0.0f, 1.0f)
 
-#define EARTH_POSITION      spherical(4.0f * SUN_SIZE, 90.0f, 0.0f, SUN_POSITION)
 #define EARTH_SIZE          (0.00625f)
 #define EARTH_COLOR         detail::Color(0.0f, 1.0f, 1.0f, 1.0f)
 #define EARTH_THETA         (0.0f)
-#define EARTH_DTHETA        (0.03125f)
+#define EARTH_DTHETA        (0.01f)
 #define EARTH_PHI           (0.0f)
 #define EARTH_DPHI          (0.0f)
-#define EARTH_DISTANCE      (15.0f)
+#define EARTH_DISTANCE      (40.0f)
+#define EARTH_POSITION      spherical(EARTH_DISTANCE, EARTH_THETA, EARTH_PHI, SUN_POSITION)
 
-#define MOON_POSITION       spherical(4.0f * SUN_SIZE, 90.0f, 0.0f, EARTH_POSITION)
 #define MOON_SIZE           (EARTH_SIZE / 2.0f)
 #define MOON_COLOR          detail::Color(0.3f, 0.3f, 0.3f, 1.0f)
-#define MOON_THETA          (0.0f)
-#define MOON_DTHETA         (EARTH_DTHETA / 2.0f)
+#define MOON_THETA          (45.0f)
+#define MOON_DTHETA         (0.0f)
 #define MOON_PHI            (0.0f)
-#define MOON_DPHI           (0.0f)
-#define MOON_DISTANCE       (EARTH_DISTANCE / 2.0f)
+#define MOON_DPHI           (0.02f)
+#define MOON_DISTANCE       (EARTH_DISTANCE / 4.0f)
+#define MOON_POSITION       spherical(MOON_DISTANCE, MOON_THETA, MOON_PHI, EARTH_POSITION)
 
 // Allocate the necessary resources
 static std::vector<solar_system::Object *> objects;
