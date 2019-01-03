@@ -15,17 +15,47 @@
 
 #include <GL/glut.h>
 
-// Return a random float between 0 and 1
-static float range()
-{
-    return static_cast<float>(std::rand()) / static_cast<float>(RAND_MAX);
-}
+// Utilities
+#define RAND01 (static_cast<float>(std::rand()) / static_cast<float>(RAND_MAX))
 
-// Return a random float in the range [min, max]
-static float range(float min, float max)
-{
-    return ((max - min) * range() + min);
-}
+#define RANGE(min, max) ((max - min) * RAND01 + min)
+
+// Parameters
+#define __WAVEFRONT_PATH__ "/home/massiva/Documents/Courses/Graphics/data/planet.obj"
+
+#define STAR_COUNT          (100UL)
+
+#define STAR_POSITION       { RANGE(-180.0f, 180.0f), RANGE(-90.0f, 90.0f), RANGE(-200.0f, -300.0f) }
+#define STAR_SIZE           (0.5f)
+#define STAR_COLOR          { 1.0f, 0.964f, 0.756f, 1.0f }
+
+#define SUN_POSITION        { 0.0f, 0.0f, -100.0f }
+#define SUN_SIZE            (20.0f)
+#define SUN_COLOR           { 1.0f, 0.647f, 0.078f, 1.0f }
+
+#define RING_SIZE           (SUN_SIZE * (12.0f / 11.0f))
+#define RING_DALPHA         (0.0005f)
+#define RING_ALPHA_MIN      (0.1f)
+#define RING_ALPHA_MAX      (0.3f)
+#define RING_COLOR          { 1.0f, 0.89f, 0.078f, RING_ALPHA_MIN }
+
+#define EARTH_SIZE          (0.00625f)
+#define EARTH_COLOR         { 0.0f, 0.435f, 0.639f, 1.0f }
+#define EARTH_THETA         (0.0f)
+#define EARTH_DTHETA        (0.01f)
+#define EARTH_PHI           (0.0f)
+#define EARTH_DPHI          (0.0f)
+#define EARTH_DISTANCE      (40.0f)
+#define EARTH_POSITION      spherical(EARTH_DISTANCE, EARTH_THETA, EARTH_PHI, SUN_POSITION)
+
+#define MOON_SIZE           (EARTH_SIZE / 2.0f)
+#define MOON_COLOR          { 0.219f, 0.219f, 0.219f, 1.0f }
+#define MOON_THETA          (45.0f)
+#define MOON_DTHETA         (0.0f)
+#define MOON_PHI            (0.0f)
+#define MOON_DPHI           (0.02f)
+#define MOON_DISTANCE       (EARTH_DISTANCE / 4.0f)
+#define MOON_POSITION       spherical(MOON_DISTANCE, MOON_THETA, MOON_PHI, EARTH_POSITION)
 
 // Return a point whose cartesian coordinates
 // correspond to the spherical coordinates specified
@@ -137,10 +167,7 @@ void solar_system::Object::render() const
     glPopMatrix();
 }
 
-void solar_system::Object::update()
-{
-    // code
-}
+void solar_system::Object::update() {}
 
 // Sun class
 // The sun is a special case of a star that radiates
@@ -171,7 +198,7 @@ void solar_system::Sun::render() const
 
     glColor4f(ring_color.red, ring_color.green, ring_color.blue, ring_color.alpha);
 
-    glutSolidSphere(size * 5.0f / 4.0f, 50, 50);
+    glutSolidSphere(RING_SIZE, 50, 50);
 
     glPopMatrix();
 }
@@ -180,13 +207,13 @@ void solar_system::Sun::update()
 {    
     ring_color.alpha += dalpha;
 
-    if (ring_color.alpha < 0.2f)
+    if (ring_color.alpha < RING_ALPHA_MIN)
     {
-        ring_color.alpha = 0.2f; dalpha *= -1.0f;
+        ring_color.alpha = RING_ALPHA_MIN; dalpha *= -1.0f;
     }
-    else if (ring_color.alpha > 0.6f)
+    else if (ring_color.alpha > RING_ALPHA_MAX)
     {
-        ring_color.alpha = 0.6f; dalpha *= -1.0f;
+        ring_color.alpha = RING_ALPHA_MAX; dalpha *= -1.0f;
     }
 }
 
@@ -227,8 +254,6 @@ void solar_system::Planet::render() const
 
     glTranslatef(position.x, position.y, position.z);
 
-    // std::cout << "[" << position.x << ", " << position.y << ", " << position.z << "]" << std::endl;
-
     glScalef(size, size, size);
 
     wavefront->render();
@@ -244,39 +269,6 @@ void solar_system::Planet::update()
 
     position = spherical(distance, theta, phi, rotating->position);
 }
-
-#define __WAVEFRONT_PATH__ "/home/massiva/Documents/Courses/Graphics/data/planet.obj"
-
-#define STAR_COUNT          (50UL)
-
-#define STAR_POSITION       detail::Vector3(range(-180.0f, 180.0f), range(-90.0f, 90.0f), range(-200.0f, -300.0f))
-#define STAR_SIZE           range(1.5f, 2.0f)
-#define STAR_COLOR          detail::Color(1.0f, 0.9f, 0.6f, 1.0f)
-
-#define RING_COLOR          detail::Color(1.0f, 1.0f, 1.0f, 0.25f)
-#define RING_DALPHA         (0.001f)
-
-#define SUN_POSITION        detail::Vector3(0.0f, 0.0f, -100.0f)
-#define SUN_SIZE            (20.0f)
-#define SUN_COLOR           detail::Color(0.9f, 0.5f, 0.0f, 1.0f)
-
-#define EARTH_SIZE          (0.00625f)
-#define EARTH_COLOR         detail::Color(0.0f, 1.0f, 1.0f, 1.0f)
-#define EARTH_THETA         (0.0f)
-#define EARTH_DTHETA        (0.01f)
-#define EARTH_PHI           (0.0f)
-#define EARTH_DPHI          (0.0f)
-#define EARTH_DISTANCE      (40.0f)
-#define EARTH_POSITION      spherical(EARTH_DISTANCE, EARTH_THETA, EARTH_PHI, SUN_POSITION)
-
-#define MOON_SIZE           (EARTH_SIZE / 2.0f)
-#define MOON_COLOR          detail::Color(0.3f, 0.3f, 0.3f, 1.0f)
-#define MOON_THETA          (45.0f)
-#define MOON_DTHETA         (0.0f)
-#define MOON_PHI            (0.0f)
-#define MOON_DPHI           (0.02f)
-#define MOON_DISTANCE       (EARTH_DISTANCE / 4.0f)
-#define MOON_POSITION       spherical(MOON_DISTANCE, MOON_THETA, MOON_PHI, EARTH_POSITION)
 
 // Allocate the necessary resources
 static std::vector<solar_system::Object *> objects;
