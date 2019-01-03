@@ -26,13 +26,15 @@ clean:
 	rm -rvf $(PATH_BIN)
 	@echo "***"
 
-$(PATH_BIN)/%.exe: $(PATH_TEST)/%.cpp $(OBJS)
-	$(CC) -I $(PATH_INC) $(DEFINED) $(CCFLAGS) $< $(OBJS) $(LIBS) -o $@
 
 VISUALS_DEP = $(addprefix $(PATH_INC)/, visuals.hpp) $(PATH_SRC)/visuals.cpp
+
 
 $(PATH_BIN)/visuals.o: $(VISUALS_DEP)
 	$(CC) -I $(PATH_INC) $(DEFINED) $(CCFLAGS) $(PATH_SRC)/visuals.cpp -c -o $(PATH_BIN)/visuals.o
 
 
 OBJS = $(addprefix $(PATH_BIN)/,  visuals.o)
+
+$(PATH_BIN)/%.exe: $(PATH_TEST)/%.cpp $(OBJS)
+	$(CC) -I $(PATH_INC) $(DEFINED) $(CCFLAGS) $< $(OBJS) $(LIBS) -o $@
