@@ -23,6 +23,14 @@ int main(int argc, char * argv[])
 
     glutCreateWindow("Solar system visualization");
 
+    glEnable(GL_DEPTH_TEST);
+
+    glDepthFunc(GL_LESS);
+
+    glEnable(GL_BLEND);
+
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
     glutDisplayFunc(solar_system::render);
 
     glutIdleFunc(solar_system::update);
