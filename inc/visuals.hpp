@@ -70,11 +70,35 @@ namespace solar_system
 
     using Star = Object;
 
+    class Sun : public Star
+    {
+        detail::Color ring_color;
+
+        float dalpha;
+
+    public:
+
+        Sun
+        (
+            const detail::Vector3& position,
+            float size,
+            const detail::Color& color,
+            const detail::Color& ring_color,
+            float dalpha
+        );
+
+        ~Sun() {};
+
+        void render() const;
+
+        void update();
+    };
+
     class Planet : public Object
-    {        
+    {
         const Object * rotating;
 
-        float angle, velocity;
+        float theta, dtheta, phi, dphi, distance;
 
     public:
         
@@ -86,8 +110,11 @@ namespace solar_system
             float size,
             const detail::Color& color,
             const Object * rotating,
-            float angle,
-            float velocity
+            float theta,
+            float dtheta,
+            float phi,
+            float dphi,
+            float distance
         );
 
         ~Planet() {}
