@@ -43,7 +43,7 @@
 #define EARTH_SIZE          (0.00625f)
 #define EARTH_COLOR         { 0.0f, 0.435f, 0.639f, 1.0f }
 #define EARTH_THETA         (0.0f)
-#define EARTH_DTHETA        (0.01f)
+#define EARTH_DTHETA        (0.0025f)
 #define EARTH_PHI           (0.0f)
 #define EARTH_DPHI          (0.0f)
 #define EARTH_DISTANCE      (40.0f)
@@ -51,10 +51,10 @@
 
 #define MOON_SIZE           (EARTH_SIZE / 2.0f)
 #define MOON_COLOR          { 0.219f, 0.219f, 0.219f, 1.0f }
-#define MOON_THETA          (45.0f)
-#define MOON_DTHETA         (0.0f)
+#define MOON_THETA          (0.0f)
+#define MOON_DTHETA         (0.01f)
 #define MOON_PHI            (0.0f)
-#define MOON_DPHI           (0.02f)
+#define MOON_DPHI           (0.0f)
 #define MOON_DISTANCE       (EARTH_DISTANCE / 4.0f)
 #define MOON_POSITION       spherical(MOON_DISTANCE, MOON_THETA, MOON_PHI, EARTH_POSITION)
 
@@ -250,11 +250,20 @@ distance(distance)
 {
 }
 
+static solar_system::Object * earth, * moon;
+
 void solar_system::Planet::render() const
 {
     glColor4f(color.red, color.green, color.blue, color.alpha);
 
     glPushMatrix();
+
+    if (this == moon)
+    {
+        glTranslatef(rotating->position.x, rotating->position.y, rotating->position.z);
+        glRotatef(90.0f, 0.0f, 0.0f, 1.0f);
+        glTranslatef(-rotating->position.x, -rotating->position.y, -rotating->position.z);
+    }
 
     glTranslatef(position.x, position.y, position.z);
 
@@ -288,7 +297,7 @@ void solar_system::alloc()
 
     Object * sun = new Sun(SUN_POSITION, SUN_SIZE, SUN_COLOR, RING_COLOR, RING_DALPHA);
 
-    Object * earth = new Planet
+    earth = new Planet
     (
         EARTH_POSITION,
         EARTH_SIZE,
@@ -301,7 +310,7 @@ void solar_system::alloc()
         EARTH_DISTANCE
     );
 
-    Object * moon = new Planet
+    moon = new Planet
     (
         MOON_POSITION,
         MOON_SIZE,
