@@ -21,11 +21,12 @@
 #define RANGE(min, max) ((max - min) * RAND01 + min)
 
 // Parameters
-#define __WAVEFRONT_PATH__ "C:/Users/johnf/Source/Repos/solar-system/data/planet.obj"
+#define __WAVEFRONT_PATH__ "/home/massiva/Documents/Courses/Graphics/data/planet.obj"
+// #define __WAVEFRONT_PATH__ "C:/Users/johnf/Source/Repos/solar-system/data/planet.obj"
 
-#define STAR_COUNT          (100UL)
+#define STAR_COUNT          (400UL)
 
-#define STAR_POSITION       { RANGE(-180.0f, 180.0f), RANGE(-90.0f, 90.0f), RANGE(-200.0f, -300.0f) }
+#define STAR_POSITION       spherical(RANGE(250.0f, 200.0f), RANGE(-45.0f, 45.0f), RANGE(-45.0f, 45.0f), SUN_POSITION)
 #define STAR_SIZE           (0.5f)
 #define STAR_COLOR          { 1.0f, 0.964f, 0.756f, 1.0f }
 
@@ -34,8 +35,8 @@
 #define SUN_COLOR           { 1.0f, 0.647f, 0.078f, 1.0f }
 
 #define RING_SIZE           (SUN_SIZE * (12.0f / 11.0f))
-#define RING_DALPHA         (0.0005f)
-#define RING_ALPHA_MIN      (0.1f)
+#define RING_DALPHA         (0.00125f)
+#define RING_ALPHA_MIN      (0.05f)
 #define RING_ALPHA_MAX      (0.3f)
 #define RING_COLOR          { 1.0f, 0.89f, 0.078f, RING_ALPHA_MIN }
 
@@ -57,8 +58,8 @@
 #define MOON_DISTANCE       (EARTH_DISTANCE / 4.0f)
 #define MOON_POSITION       spherical(MOON_DISTANCE, MOON_THETA, MOON_PHI, EARTH_POSITION)
 
-bool animate = true;
-float tx = 0, ty = 0, tz = 0;
+static bool animate = true;
+static float tx = 0, ty = 0, tz = 0;
 
 // Return a point whose cartesian coordinates
 // correspond to the spherical coordinates specified
@@ -165,7 +166,7 @@ void solar_system::Object::render() const
 
     glTranslatef(position.x, position.y, position.z);
 
-    glutSolidSphere(size, 50, 50);
+    glutSolidSphere(size, 5, 5);
 
     glPopMatrix();
 }
@@ -341,9 +342,23 @@ void solar_system::render()
 	glTranslatef(0.0f, 0.0f, 100.f);
 
     for (const auto body_ptr : objects)
+    {
         body_ptr->render();
+    }
 
-	draw_axes();
+    // Draw axes
+	glColor3f(0.6, 0.6, 0.6);
+
+	glBegin(GL_LINES);
+
+    glVertex3f(0.0,  0.0,  -100.0);
+    glVertex3f(50.0, 0.0,  -100.0);
+    glVertex3f(0.0,  0.0,  -100.0);
+    glVertex3f(0.0,  0.0,    50.0);
+    glVertex3f(0.0,  0.0,  -100.0);
+    glVertex3f(0.0,  50.0, -100.0);
+
+	glEnd();
 
     glutSwapBuffers();
 }
@@ -357,27 +372,11 @@ void solar_system::update()
     glutPostRedisplay();
 }
 
-void solar_system::draw_axes()
-{
-	glColor3f(0.6, 0.6, 0.6);
-
-	glPushMatrix();
-	glBegin(GL_LINES);
-		glVertex3f(0.0, 0.0, -100.0);
-		glVertex3f(50.0, 0.0, -100.0);
-		glVertex3f(0.0, 0.0, -100.0);
-		glVertex3f(0.0, 0.0, 50.0);
-		glVertex3f(0.0, 0.0, -100.0);
-		glVertex3f(0.0, 50.0, -100.0);
-	glEnd();
-	glPopMatrix();
-}
-
-void solar_system::inspect(unsigned char key, int mousex, int mousey)
+void solar_system::inspect(unsigned char key, int, int)
 {
 	switch (key)
 	{
-	case 'q': exit(0); break;
+	case 'q': std::exit(EXIT_SUCCESS); break;
 	case 'r': tx = 0; ty = 0; tz = 0; break;
 	case 'p': animate = !animate; break;
 	case 'a': tx += 1.0f;  break;
