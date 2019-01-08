@@ -129,4 +129,7 @@ namespace solar_system
 
     void render();
     void update();
+
+	void draw_axes();
+	void inspect(unsigned char key, int mousex, int mousey);
 };

@@ -21,7 +21,7 @@
 #define RANGE(min, max) ((max - min) * RAND01 + min)
 
 // Parameters
-#define __WAVEFRONT_PATH__ "/home/massiva/Documents/Courses/Graphics/data/planet.obj"
+#define __WAVEFRONT_PATH__ "C:/Users/johnf/Source/Repos/solar-system/data/planet.obj"
 
 #define STAR_COUNT          (100UL)
 
@@ -56,6 +56,9 @@
 #define MOON_DPHI           (0.02f)
 #define MOON_DISTANCE       (EARTH_DISTANCE / 4.0f)
 #define MOON_POSITION       spherical(MOON_DISTANCE, MOON_THETA, MOON_PHI, EARTH_POSITION)
+
+bool animate = true;
+float tx = 0, ty = 0, tz = 0;
 
 // Return a point whose cartesian coordinates
 // correspond to the spherical coordinates specified
@@ -331,16 +334,58 @@ void solar_system::render()
 
     glLoadIdentity();
 
+	glTranslatef(0.0f, 0.0f, -100.f);
+	glRotatef(tx, 1, 0, 0);
+	glRotatef(ty, 0, 1, 0);
+	glRotatef(tz, 0, 0, 1);
+	glTranslatef(0.0f, 0.0f, 100.f);
+
     for (const auto body_ptr : objects)
         body_ptr->render();
+
+	draw_axes();
 
     glutSwapBuffers();
 }
 
 void solar_system::update()
 {
-    for (auto body_ptr : objects)
-        body_ptr->update();
+	if(animate)
+		for (auto body_ptr : objects)
+			body_ptr->update();
 
     glutPostRedisplay();
+}
+
+void solar_system::draw_axes()
+{
+	glColor3f(0.6, 0.6, 0.6);
+
+	glPushMatrix();
+	glBegin(GL_LINES);
+		glVertex3f(0.0, 0.0, -100.0);
+		glVertex3f(50.0, 0.0, -100.0);
+		glVertex3f(0.0, 0.0, -100.0);
+		glVertex3f(0.0, 0.0, 50.0);
+		glVertex3f(0.0, 0.0, -100.0);
+		glVertex3f(0.0, 50.0, -100.0);
+	glEnd();
+	glPopMatrix();
+}
+
+void solar_system::inspect(unsigned char key, int mousex, int mousey)
+{
+	switch (key)
+	{
+	case 'q': exit(0); break;
+	case 'r': tx = 0; ty = 0; tz = 0; break;
+	case 'p': animate = !animate; break;
+	case 'a': tx += 1.0f;  break;
+	case 'z': tx -= 1.0f;  break;
+	case 's': ty += 1.0f;  break;
+	case 'x': ty -= 1.0f;  break;
+	case 'd': tz += 1.0f;  break;
+	case 'c': tz -= 1.0f;  break;
+	default: break;
+	}
 }

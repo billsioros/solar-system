@@ -7,8 +7,6 @@
 
 void resize(int width, int height);
 
-void inspect(unsigned char key, int mousex, int mousey);
-
 int main(int argc, char * argv[])
 {    
     solar_system::alloc();
@@ -35,6 +33,8 @@ int main(int argc, char * argv[])
 
     glutIdleFunc(solar_system::update);
 
+	glutKeyboardFunc(solar_system::inspect);
+
     glutReshapeFunc(resize);
 
     glutMainLoop();
@@ -60,9 +60,4 @@ void resize(int width, int height)
     gluPerspective(45, ratio, 20, 300);
 
     glMatrixMode(GL_MODELVIEW);
-}
-
-void inspect(unsigned char key, int mousex, int mousey)
-{
-    // code
 }
