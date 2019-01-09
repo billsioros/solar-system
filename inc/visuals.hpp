@@ -48,6 +48,8 @@ namespace solar_system
     class Object
     {
         friend class Planet;
+        friend class Moon;
+        friend class Earth;
 
     protected:
 
@@ -96,9 +98,11 @@ namespace solar_system
 
     class Planet : public Object
     {
+    protected:
+
         const Object * rotating;
 
-        float theta, dtheta, phi, dphi, distance;
+        float angle, dangle, distance;
 
     public:
         
@@ -110,18 +114,48 @@ namespace solar_system
             float size,
             const detail::Color& color,
             const Object * rotating,
-            float theta,
-            float dtheta,
-            float phi,
-            float dphi,
+            float angle,
+            float dangle,
             float distance
         );
 
-        ~Planet() {}
+        virtual ~Planet() {}
 
-        void render() const;
+        virtual void render() const = 0;
 
         void update();
+    };
+
+    struct Moon : public Planet
+    {
+        Moon
+        (
+            const detail::Vector3& position,
+            float size,
+            const detail::Color& color,
+            const Object * rotating,
+            float angle,
+            float dangle,
+            float distance
+        );
+
+        void render() const;
+    };
+
+    struct Earth : public Planet
+    {
+        Earth
+        (
+            const detail::Vector3& position,
+            float size,
+            const detail::Color& color,
+            const Object * rotating,
+            float angle,
+            float dangle,
+            float distance
+        );
+        
+        void render() const;
     };
 
     void alloc();

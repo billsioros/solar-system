@@ -233,37 +233,46 @@ solar_system::Planet::Planet
     float size,
     const detail::Color& color,
     const Object * rotating,
-    float theta,
-    float dtheta,
-    float phi,
-    float dphi,
+    float angle,
+    float dangle,
     float distance
 )
 :
 Object(position, size, color),
 rotating(rotating),
-theta(theta),
-dtheta(dtheta),
-phi(phi),
-dphi(dphi),
+angle(angle),
+dangle(dangle),
 distance(distance)
 {
 }
 
-static solar_system::Object * earth, * moon;
+void solar_system::Planet::update()
+{
+    angle += (angle < 360.0f ? dangle : -360.0f);
 
-void solar_system::Planet::render() const
+    position = spherical(distance, angle, 0.0f, rotating->position);
+}
+
+solar_system::Earth::Earth
+(
+    const detail::Vector3& position,
+    float size,
+    const detail::Color& color,
+    const Object * rotating,
+    float angle,
+    float dangle,
+    float distance
+)
+:
+Planet(position, size, color, rotating, angle, dangle, distance)
+{
+}
+
+void solar_system::Earth::render() const
 {
     glColor4f(color.red, color.green, color.blue, color.alpha);
 
     glPushMatrix();
-
-    if (this == moon)
-    {
-        glTranslatef(rotating->position.x, rotating->position.y, rotating->position.z);
-        glRotatef(90.0f, 0.0f, 0.0f, 1.0f);
-        glTranslatef(-rotating->position.x, -rotating->position.y, -rotating->position.z);
-    }
 
     glTranslatef(position.x, position.y, position.z);
 
@@ -274,13 +283,38 @@ void solar_system::Planet::render() const
     glPopMatrix();
 }
 
-void solar_system::Planet::update()
+solar_system::Moon::Moon
+(
+    const detail::Vector3& position,
+    float size,
+    const detail::Color& color,
+    const Object * rotating,
+    float angle,
+    float dangle,
+    float distance
+)
+:
+Planet(position, size, color, rotating, angle, dangle, distance)
 {
-    theta += (theta < 360.0f ? dtheta : -360.0f);
+}
 
-    phi += (phi < 360.0f ? dphi : -360.0f);
+void solar_system::Moon::render() const
+{
+    glColor4f(color.red, color.green, color.blue, color.alpha);
 
-    position = spherical(distance, theta, phi, rotating->position);
+    glPushMatrix();
+
+    glTranslatef(rotating->position.x, rotating->position.y, rotating->position.z);
+    glRotatef(90.0f, 0.0f, 0.0f, 1.0f);
+    glTranslatef(-rotating->position.x, -rotating->position.y, -rotating->position.z);
+
+    glTranslatef(position.x, position.y, position.z);
+
+    glScalef(size, size, size);
+
+    wavefront->render();
+
+    glPopMatrix();
 }
 
 // Allocate the necessary resources
@@ -297,7 +331,7 @@ void solar_system::alloc()
 
     Object * sun = new Sun(SUN_POSITION, SUN_SIZE, SUN_COLOR, RING_COLOR, RING_DALPHA);
 
-    earth = new Planet
+    Object * earth = new Earth
     (
         EARTH_POSITION,
         EARTH_SIZE,
@@ -305,12 +339,10 @@ void solar_system::alloc()
         sun,
         EARTH_THETA,
         EARTH_DTHETA,
-        EARTH_PHI,
-        EARTH_DPHI,
         EARTH_DISTANCE
     );
 
-    moon = new Planet
+    Object * moon = new Moon
     (
         MOON_POSITION,
         MOON_SIZE,
@@ -318,8 +350,6 @@ void solar_system::alloc()
         earth,
         MOON_THETA,
         MOON_DTHETA,
-        MOON_PHI,
-        MOON_DPHI,
         MOON_DISTANCE
     );
 
