@@ -1,18 +1,21 @@
 
-#include <GL/glut.h>
+#include <visuals.hpp>
 
-void render();
-void update();
+#include <iostream>
+
+#include <GL/glut.h>
 
 void resize(int width, int height);
 
 int main(int argc, char * argv[])
 {
+    solar_system::setup();
+
     glutInit(&argc, argv);
 
     glutInitWindowPosition(50, 50);
 
-    glutInitWindowSize(720, 720);
+    glutInitWindowSize(1280, 720);
 
     glutInitDisplayMode(GLUT_RGBA | GLUT_DOUBLE | GLUT_DEPTH);
 
@@ -26,59 +29,17 @@ int main(int argc, char * argv[])
 
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-    glutDisplayFunc(render);
+    glutDisplayFunc(solar_system::render);
 
-    glutIdleFunc(update);
+    glutIdleFunc(solar_system::update);
+
+	glutKeyboardFunc(solar_system::input);
 
     glutReshapeFunc(resize);
 
     glutMainLoop();
 
     return 0;
-}
-
-static float angle = 30.0f;
-
-void render()
-{
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-    glLoadIdentity();
-
-    glColor4f(1.0f, 1.0f, 0.0f, 1.0f);
-
-    glPushMatrix();
-
-    glTranslatef(0.0, 0.0, -50.0);
-
-    glRotatef(angle, 0.0f, 1.0f, 0.0f);
-
-    glutSolidCube(5.0);
-
-    glPopMatrix();
-
-    glColor4f(1.0f, 0.0f, 1.0f, 0.2f);
-
-    glPushMatrix();
-
-    glTranslatef(0.0, 0.0, -50.0);
-
-    glRotatef(angle, 0.0f, 1.0f, 0.0f);
-
-    glTranslatef(15.0, 0.0, 0.0);
-
-    glutSolidCube(5.0);
-
-    glPopMatrix();
-
-    glutSwapBuffers();
-}
-
-void update()
-{
-    angle += (angle < 360.0f ? 1.0 : -360.0f);
-
-    glutPostRedisplay();
 }
 
 void resize(int width, int height)
