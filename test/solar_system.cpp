@@ -9,17 +9,17 @@ void resize(int width, int height);
 
 int main(int argc, char * argv[])
 {
-    solar_system::setup();
-
     glutInit(&argc, argv);
-
-    glutInitWindowPosition(50, 50);
-
-    glutInitWindowSize(1280, 720);
 
     glutInitDisplayMode(GLUT_RGBA | GLUT_DOUBLE | GLUT_DEPTH);
 
+    glutInitWindowSize(1280, 720);
+
+    glutInitWindowPosition(50, 50);
+
     glutCreateWindow("Solar system visualization");
+
+    solar_system::setup();
 
     glEnable(GL_DEPTH_TEST);
 
