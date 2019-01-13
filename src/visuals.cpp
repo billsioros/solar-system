@@ -165,12 +165,21 @@ void detail::Wavefront::render() const
 
     for (const auto& face : faces)
     {
-        const auto& v1 = vertices[face.fst[0] - 1];
-        const auto& v2 = vertices[face.snd[0] - 1];
-        const auto& v3 = vertices[face.thd[0] - 1];
+        const auto& v1 = vertices[face.fst[0UL] - 1UL];
+        const auto& v2 = vertices[face.snd[0UL] - 1UL];
+        const auto& v3 = vertices[face.thd[0UL] - 1UL];
 
+        const auto& n1 = vertices[face.fst[1UL] - 1UL];
+        const auto& n2 = vertices[face.snd[1UL] - 1UL];
+        const auto& n3 = vertices[face.thd[1UL] - 1UL];
+
+        glNormal3f(n1.x, n1.y, n1.z);
         glVertex3f(v1.x, v1.y, v1.z);
+
+        glNormal3f(n2.x, n2.y, n2.z);
         glVertex3f(v2.x, v2.y, v2.z);
+
+        glNormal3f(n3.x, n3.y, n3.z);
         glVertex3f(v3.x, v3.y, v3.z);
     }
 
