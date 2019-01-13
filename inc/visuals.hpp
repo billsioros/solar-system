@@ -151,7 +151,7 @@ namespace solar_system
 
         virtual void render() const = 0;
 
-        void update();
+        virtual void update() = 0;
     };
 
     // A Planet specification for rendering the moon
@@ -169,6 +169,8 @@ namespace solar_system
         );
 
         void render() const;
+
+        void update();
     };
 
     // A Planet specification for rendering earth
@@ -186,6 +188,8 @@ namespace solar_system
         );
         
         void render() const;
+
+        void update();
     };
 
     void setup();

@@ -285,12 +285,9 @@ distance(distance)
 }
 
 // Update "angle" so that it oscillates between 0 and 360 degrees
-// Then update its position according to its current angle
 void solar_system::Planet::update()
 {
     angle += (angle < 360.0f ? dangle : -360.0f);
-
-    position = spherical(distance, angle, 0.0f, rotating->position);
 }
 
 solar_system::Earth::Earth
@@ -323,6 +320,14 @@ void solar_system::Earth::render() const
     wavefront.render();
 
     glPopMatrix();
+}
+
+// Update its position according to its current angle
+void solar_system::Earth::update()
+{
+    Planet::update();
+
+    position = spherical(distance, angle, 0.0f, rotating->position);
 }
 
 solar_system::Moon::Moon
@@ -363,6 +368,14 @@ void solar_system::Moon::render() const
     wavefront.render();
 
     glPopMatrix();
+}
+
+// Update its position according to its current angle
+void solar_system::Moon::update()
+{
+    Planet::update();
+
+    position = spherical(distance, angle, 0.0f, rotating->position);
 }
 
 // Seed the random number generator and allocate all the necessary resources
