@@ -1,8 +1,8 @@
 /*
 Simplistic solar system implemented in OpenGL
 
-* sdi1500144 - Vasileios Sioros
-* sdi1500176 - Ioannis Heilaris
+* 1115201500144 - Vasileios Sioros
+* 1115201500176 - Ioannis Heilaris
 */
 
 #include <visuals.hpp>
