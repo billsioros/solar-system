@@ -398,7 +398,9 @@ void solar_system::render()
 	glTranslatef(0.0f, 0.0f, 100.f);
 
     for (const auto& entity_ptr : scene.entities)
+    {
         entity_ptr->render();
+    }
 
 	glColor3f(0.6, 0.6, 0.6);
 
