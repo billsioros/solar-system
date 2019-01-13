@@ -1,8 +1,8 @@
 /*
-Simplistic solar system visualization in OpenGL by
+Simplistic solar system implemented in OpenGL
 
-sdi1500144 - Vasileios Sioros
-sdi1500176 - Ioannis Heilaris
+* sdi1500144 - Vasileios Sioros
+* sdi1500176 - Ioannis Heilaris
 */
 
 #include <visuals.hpp>
@@ -19,8 +19,15 @@ sdi1500176 - Ioannis Heilaris
 
 #include <GL/glut.h>
 
-// A function returning a random floating point number
-// in the range [min, max]
+// ATTENTION:
+// CHANGE THE FOLLOWING MACRO IN CASE YOU HAVE A DIFFERENT FILE SYSTEM TREE STRUCTURE
+#if !defined(__WAVEFRONT_PATH__)
+    #define __WAVEFRONT_PATH__ "/home/massiva/Documents/Courses/Graphics/data/planet.obj"
+    // #define __WAVEFRONT_PATH__ "C:/Users/johnf/Source/Repos/solar-system/data/planet.obj"
+#endif
+
+// A macro function returning
+// a random floating point number in the range [min, max]
 #define random(min, max)                                                \
 (                                                                       \
     (max - min) *                                                       \
@@ -29,61 +36,55 @@ sdi1500176 - Ioannis Heilaris
     ) + min                                                             \
 )                                                                       \
 
-// The path to the 3D model
-#define __WAVEFRONT_PATH__ "/home/massiva/Documents/Courses/Graphics/data/planet.obj"
-// #define __WAVEFRONT_PATH__ "C:/Users/johnf/Source/Repos/solar-system/data/planet.obj"
-
-// After a lot of experimentation, we ended up using the following settings
+// Sun info:
+#define SUN_POSITION        0.0f, 0.0f, -100.0f
+#define SUN_SIZE            (20.0f)
+#define SUN_SLICES          (100)
+#define SUN_COLOR           1.0f, 0.647f, 0.078f, 1.0f
 
 // Star info:
-#define STAR_COUNT          (400UL)
+#define STAR_COUNT          (300UL)
 
-#define STAR_POSITION       spherical(random(200.0f, 250.0f), random(-45.0f, 45.0f), random(-45.0f, 45.0f), SUN_POSITION)
+#define STAR_POSITION       spherical(random(300.0f, 450.0f), random(0.0f, 180.0f), random(0.0f, 180.0f), { SUN_POSITION })
 #define STAR_SIZE           (0.5f)
-#define STAR_COLOR          { 1.0f, 0.964f, 0.756f, 1.0f }
-
-// Sun info:
-#define SUN_POSITION        { 0.0f, 0.0f, -100.0f }
-#define SUN_SIZE            (20.0f)
-#define SUN_COLOR           { 1.0f, 0.647f, 0.078f, 1.0f }
+#define STAR_SLICES         (10)
+#define STAR_COLOR          1.0f, 0.964f, 0.756f, 1.0f
 
 // Ring info:
 #define RING_SIZE           (SUN_SIZE * (12.0f / 11.0f))
-#define RING_DALPHA         (0.00125f)
+#define RING_DALPHA         (0.0025f)
 #define RING_ALPHA_MIN      (0.05f)
-#define RING_ALPHA_MAX      (0.3f)
+#define RING_ALPHA_MAX      (0.7f)
 #define RING_COLOR          { 1.0f, 0.89f, 0.078f, RING_ALPHA_MIN }
 
 // Earth Info:
-#define EARTH_SIZE          (0.00625f)
-#define EARTH_COLOR         { 0.0f, 0.435f, 0.639f, 1.0f }
-#define EARTH_THETA         (0.0f)
-#define EARTH_DTHETA        (0.0025f)
-#define EARTH_PHI           (0.0f)
-#define EARTH_DPHI          (0.0f)
-#define EARTH_DISTANCE      (40.0f)
-#define EARTH_POSITION      spherical(EARTH_DISTANCE, EARTH_THETA, EARTH_PHI, SUN_POSITION)
+#define EARTH_SCALE         (0.00625f)
+#define EARTH_COLOR         0.0f, 0.435f, 0.639f, 1.0f
+#define EARTH_ANGLE         (-90.0f)
+#define EARTH_DANGLE        (0.0625f)
+#define EARTH_DISTANCE      (60.0f)
 
 // Moon Info:
-#define MOON_SIZE           (EARTH_SIZE / 2.0f)
-#define MOON_COLOR          { 0.219f, 0.219f, 0.219f, 1.0f }
-#define MOON_THETA          (0.0f)
-#define MOON_DTHETA         (0.01f)
-#define MOON_PHI            (0.0f)
-#define MOON_DPHI           (0.0f)
-#define MOON_DISTANCE       (EARTH_DISTANCE / 4.0f)
-#define MOON_POSITION       spherical(MOON_DISTANCE, MOON_THETA, MOON_PHI, EARTH_POSITION)
+#define MOON_SCALE          (EARTH_SCALE / 4.0f)
+#define MOON_COLOR          0.219f, 0.219f, 0.219f, 1.0f
+#define MOON_ANGLE          (30.0f)
+#define MOON_DANGLE         (1.0f)
+#define MOON_DISTANCE       (EARTH_DISTANCE / 6.0f)
 
 // An unnamed struct that holds all the info having to do with our scene
 static struct
 {
-    bool animate;
-    float tx, ty, tz;
-    std::vector<std::unique_ptr<solar_system::Entity>> objects;
+    // @paused: a bool indicating if the user has pressed the pause button
+    // @crx, @cry, @crz: the camera's angle of rotation around the sun
+    // in the corresponding axis
+    // @entities: A vector that contains every entity to be rendered
+    bool paused;
+    float crx, cry, crz;
+    std::vector<std::unique_ptr<solar_system::Entity>> entities;
 } scene =
 {
-    .animate = true,
-    .tx = 0.0f, .ty = 0.0f, .tz = 0.0f,
+    .paused = false,
+    .crx = 0.0f, .cry = 0.0f, .crz = 0.0f,
     {}
 };
 
@@ -158,9 +159,15 @@ detail::Wavefront::Wavefront(const char * wavefront_path)
     }
 }
 
-// Render the wavefront 3D object
-void detail::Wavefront::render() const
+// Render the wavefront 3D entity
+// Simply scale the resulting entity by the amount specified
+// to get the desirable result
+void detail::Wavefront::render(float scale) const
 {
+    glPushMatrix();
+
+    glScalef(scale, scale, scale);
+
     glBegin(GL_TRIANGLES);
 
     for (const auto& face : faces)
@@ -169,9 +176,9 @@ void detail::Wavefront::render() const
         const auto& v2 = vertices[face.snd[0UL] - 1UL];
         const auto& v3 = vertices[face.thd[0UL] - 1UL];
 
-        const auto& n1 = vertices[face.fst[1UL] - 1UL];
-        const auto& n2 = vertices[face.snd[1UL] - 1UL];
-        const auto& n3 = vertices[face.thd[1UL] - 1UL];
+        const auto& n1 = normals[face.fst[1UL] - 1UL];
+        const auto& n2 = normals[face.snd[1UL] - 1UL];
+        const auto& n3 = normals[face.thd[1UL] - 1UL];
 
         glNormal3f(n1.x, n1.y, n1.z);
         glVertex3f(v1.x, v1.y, v1.z);
@@ -184,60 +191,45 @@ void detail::Wavefront::render() const
     }
 
     glEnd();
-}
-
-// Star class
-solar_system::Star::Star(const detail::Vector3& position, float size, const detail::Color& color)
-:
-position(position), size(size), color(color)
-{
-}
-
-// In order to render a star we translate to its position
-// and render a glut primitive (solid sphere) with the given color
-void solar_system::Star::render() const
-{
-    glColor4f(color.red, color.green, color.blue, color.alpha);
-
-    glPushMatrix();
-
-    glTranslatef(position.x, position.y, position.z);
-
-    glutSolidSphere(size, 5, 5);
 
     glPopMatrix();
 }
 
-void solar_system::Star::update() {}
+// Star class
+// In order to render a star we translate to its position
+// and draw a colored solid sphere
+void solar_system::Star::render() const
+{
+    glColor4f(STAR_COLOR);
+
+    glPushMatrix();
+
+    glTranslatef(x, y, z);
+
+    glutSolidSphere(STAR_SIZE, STAR_SLICES, STAR_SLICES);
+
+    glPopMatrix();
+}
 
 // Sun class
-solar_system::Sun::Sun
-(
-    const detail::Vector3& position,
-    float size,
-    const detail::Color& color,
-    const detail::Color& ring_color,
-    float dalpha
-)
+solar_system::Sun::Sun(const detail::Color& ring_color)
 :
-Entity(position, size, color),
-ring_color(ring_color),
-dalpha(dalpha)
+ring_color(ring_color)
 {
 }
 
-// In order to render the sun, we translate to its position and render two solid spheres
-// The first one is of size "size" and the second one is of greater size, specifically
-// (12.0f / 11.0f) times greater
+// In order to render the sun, we render 2 concentric solid spheres.
+// So we need to translate to the sun's position and
+// draw 2 solid spheres of different sizes and colors
 void solar_system::Sun::render() const
 {
     glPushMatrix();
 
-    glTranslatef(position.x, position.y, position.z);
+    glTranslatef(SUN_POSITION);
 
-    glColor4f(color.red, color.green, color.blue, color.alpha);
+    glColor4f(SUN_COLOR);
 
-    glutSolidSphere(size, 50, 50);
+    glutSolidSphere(SUN_SIZE, SUN_SLICES, SUN_SLICES);
 
     glColor4f(ring_color.red, ring_color.green, ring_color.blue, ring_color.alpha);
 
@@ -246,10 +238,12 @@ void solar_system::Sun::render() const
     glPopMatrix();
 }
 
-// Update the alpha of the sun's ring,
-// so that it oscillates between RING_ALPHA_MIN and RING_ALPHA_MAX
+// Update the sun's ring's color, so that its alpha oscillates between
+// 2 values, with the purpose of making it seem like it's radiating
 void solar_system::Sun::update()
 {
+    static float dalpha = RING_DALPHA;
+
     ring_color.alpha += dalpha;
 
     if (ring_color.alpha < RING_ALPHA_MIN)
@@ -267,16 +261,12 @@ const detail::Wavefront solar_system::Planet::wavefront(__WAVEFRONT_PATH__);
 // Planet class
 solar_system::Planet::Planet
 (
-    const detail::Vector3& position,
-    float size,
-    const detail::Color& color,
     const Entity * rotating,
     float angle,
     float dangle,
     float distance
 )
 :
-Entity(position, size, color),
 rotating(rotating),
 angle(angle),
 dangle(dangle),
@@ -284,142 +274,117 @@ distance(distance)
 {
 }
 
-// Update "angle" so that it oscillates between 0 and 360 degrees
+// Update the planet's angle of rotation so that it oscillates between 0 and 360 degrees
 void solar_system::Planet::update()
 {
     angle += (angle < 360.0f ? dangle : -360.0f);
 }
 
+// Earth class
 solar_system::Earth::Earth
 (
-    const detail::Vector3& position,
-    float size,
-    const detail::Color& color,
     const Entity * rotating,
     float angle,
     float dangle,
     float distance
 )
 :
-Planet(position, size, color, rotating, angle, dangle, distance)
+Planet(rotating, angle, dangle, distance)
 {
 }
 
-// Translate to the earth's position, scale by size in all axes
-// and render the 3D model colored a shade of gray
+// Translate to the sun's location, rotate by angle in the y axis
+// and translate EARTH_DISTANCE away in the x axis
+// Finally render the wavefront model scaled by EARTH_SCALE
+// This results in the earth orbiting the sun in its local y axis
+// ATTENTION: The matching "glPopMatrix" to the following "glPushMatrix"
+// can be found in solar_system::Moon::render
 void solar_system::Earth::render() const
 {
-    glColor4f(color.red, color.green, color.blue, color.alpha);
+    glColor4f(EARTH_COLOR);
 
     glPushMatrix();
 
-    glTranslatef(position.x, position.y, position.z);
+    glTranslatef(SUN_POSITION);
+    glRotatef(angle, 0.0f, 1.0f, 0.0f);
+    glTranslatef(EARTH_DISTANCE, 0.0f, 0.0f);
 
-    glScalef(size, size, size);
-
-    wavefront.render();
-
-    glPopMatrix();
+    Planet::wavefront.render(EARTH_SCALE);
 }
 
-// Update its position according to its current angle
-void solar_system::Earth::update()
-{
-    Planet::update();
-
-    position = spherical(distance, angle, 0.0f, rotating->position);
-}
-
+// Moon class
 solar_system::Moon::Moon
 (
-    const detail::Vector3& position,
-    float size,
-    const detail::Color& color,
     const Entity * rotating,
     float angle,
     float dangle,
     float distance
 )
 :
-Planet(position, size, color, rotating, angle, dangle, distance)
+Planet(rotating, angle, dangle, distance)
 {
 }
 
-// Translate to the position of the object being rotated by the moon,
-// (i.e. the earth's position) rotate by 90 degrees in the z axis
-// and translate back to the original position. This results in the
-// moon being shown to rotate earth in the x axis.
-// Lastly, translate to the moon's position, scale by size in all axes
-// and render the wavefront object colored a shade of blue
+// After rendering the earth, our 3D system has been translated
+// and rotated as need. We now rotate by angle in the earth's local x axis
+// (due to the previously referenced transformations) and then
+// translate MOON_DISTANCE away in the y-axis
+// Finally render the wavefront model scaled by MOON_SCALE
+// This results in the moon rotating the earth in each local x axis
 void solar_system::Moon::render() const
 {
-    glColor4f(color.red, color.green, color.blue, color.alpha);
+    glColor4f(MOON_COLOR);
 
-    glPushMatrix();
+    glRotatef(angle, 1.0f, 0.0f, 0.0f);
+    glTranslatef(0.0f, MOON_DISTANCE, 0.0f);
 
-    glTranslatef(rotating->position.x, rotating->position.y, rotating->position.z);
-    glRotatef(90.0f, 0.0f, 0.0f, 1.0f);
-    glTranslatef(-rotating->position.x, -rotating->position.y, -rotating->position.z);
-
-    glTranslatef(position.x, position.y, position.z);
-
-    glScalef(size, size, size);
-
-    wavefront.render();
+    Planet::wavefront.render(MOON_SCALE);
 
     glPopMatrix();
 }
 
-// Update its position according to its current angle
-void solar_system::Moon::update()
-{
-    Planet::update();
-
-    position = spherical(distance, angle, 0.0f, rotating->position);
-}
-
-// Seed the random number generator and allocate all the necessary resources
+// Seed the random number generator and
+// initialize all the entities that make up our scene
+// and pass them to a vector
 void solar_system::setup()
 {
     std::srand(static_cast<unsigned>(std::time(nullptr)));
 
     for (std::size_t s = 0UL; s < STAR_COUNT; s++)
-        scene.objects.emplace_back(new Star(STAR_POSITION, STAR_SIZE, STAR_COLOR));
+        scene.entities.emplace_back(new Star(STAR_POSITION));
 
-    Entity * sun = new Sun(SUN_POSITION, SUN_SIZE, SUN_COLOR, RING_COLOR, RING_DALPHA);
+    Sun * sun = new Sun(RING_COLOR);
 
-    Entity * earth = new Earth
+    Earth * earth = new Earth
     (
-        EARTH_POSITION,
-        EARTH_SIZE,
-        EARTH_COLOR,
         sun,
-        EARTH_THETA,
-        EARTH_DTHETA,
+        EARTH_ANGLE,
+        EARTH_DANGLE,
         EARTH_DISTANCE
     );
 
-    Entity * moon = new Moon
+    Moon * moon = new Moon
     (
-        MOON_POSITION,
-        MOON_SIZE,
-        MOON_COLOR,
         earth,
-        MOON_THETA,
-        MOON_DTHETA,
+        MOON_ANGLE,
+        MOON_DANGLE,
         MOON_DISTANCE
     );
 
-    scene.objects.emplace_back(moon);
+    scene.entities.emplace_back(earth);
 
-    scene.objects.emplace_back(earth);
+    scene.entities.emplace_back(moon);
 
-    scene.objects.emplace_back(sun);
+    scene.entities.emplace_back(sun);
 }
 
 // Clear the color and depth buffers and load the identity matrix
-// Rotate around the sun in any axis the user wants to
-// Draw the 3D axis with the sun as their star point and swap drawing buffers
+// Translate to the sun's position (i.e. the center of our world)
+// and rotate the camera according to the user's input
+// The entities are rendered in the order in which
+// they were introduced into the vector
+// After rendering every entity, draw the 3D space axes
+// and swap buffers
 void solar_system::render()
 {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -427,15 +392,14 @@ void solar_system::render()
     glMatrixMode(GL_MODELVIEW); glLoadIdentity();
 
 	glTranslatef(0.0f, 0.0f, -100.f);
-	glRotatef(scene.tx, 1.0f, 0.0f, 0.0f);
-	glRotatef(scene.ty, 0.0f, 1.0f, 0.0f);
-	glRotatef(scene.tz, 0.0f, 0.0f, 1.0f);
+	glRotatef(scene.crx, 1.0f, 0.0f, 0.0f);
+	glRotatef(scene.cry, 0.0f, 1.0f, 0.0f);
+	glRotatef(scene.crz, 0.0f, 0.0f, 1.0f);
 	glTranslatef(0.0f, 0.0f, 100.f);
 
-    for (const auto& body_ptr : scene.objects)
-        body_ptr->render();
+    for (const auto& entity_ptr : scene.entities)
+        entity_ptr->render();
 
-    // Draw axes
 	glColor3f(0.6, 0.6, 0.6);
 
 	glBegin(GL_LINES);
@@ -452,12 +416,15 @@ void solar_system::render()
     glutSwapBuffers();
 }
 
-// If the user hasn't paused the program, update the position of every object
+// If the user hasn't paused the program,
+// update each entity and mark the scene as needing to be redisplayed
 void solar_system::update()
 {
-	if(scene.animate)
-		for (auto& body_ptr : scene.objects)
-			body_ptr->update();
+	if(!scene.paused)
+    {
+		for (auto& entity_ptr : scene.entities)
+			entity_ptr->update();
+    }
 
     glutPostRedisplay();
 }
@@ -474,14 +441,14 @@ void solar_system::input(unsigned char key, int, int)
 	switch (key)
 	{
 	case 'q': std::exit(EXIT_SUCCESS); break;
-	case 'r': scene.tx = 0.0f; scene.ty = 0.0f; scene.tz = 0.0f; break;
-	case 'p': scene.animate = !scene.animate; break;
-	case 'a': scene.tx += 1.0f;  break;
-	case 'z': scene.tx -= 1.0f;  break;
-	case 's': scene.ty += 1.0f;  break;
-	case 'x': scene.ty -= 1.0f;  break;
-	case 'd': scene.tz += 1.0f;  break;
-	case 'c': scene.tz -= 1.0f;  break;
+	case 'r': scene.crx = 0.0f; scene.cry = 0.0f; scene.crz = 0.0f; break;
+	case 'p': scene.paused = !scene.paused; break;
+	case 'a': scene.crx += 1.0f;  break;
+	case 'z': scene.crx -= 1.0f;  break;
+	case 's': scene.cry += 1.0f;  break;
+	case 'x': scene.cry -= 1.0f;  break;
+	case 'd': scene.crz += 1.0f;  break;
+	case 'c': scene.crz -= 1.0f;  break;
 	default: break;
 	}
 }
