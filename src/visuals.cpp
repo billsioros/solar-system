@@ -83,7 +83,7 @@ static struct
 } scene =
 {
     .animate = true,
-    .tx = 0.0f, .ty = 0.0f, .tz = 0.0f,
+    .tx = 0.0f, .ty = 0.0f, .tz = 0.0f, // All initial values regarding scene rotation 
     {}
 };
 
@@ -404,6 +404,7 @@ void solar_system::render()
 
     glMatrixMode(GL_MODELVIEW); glLoadIdentity();
 
+    // Apply rotation to all 3 axes in regards to the center of the sun
 	glTranslatef(0.0f, 0.0f, -100.f);
 	glRotatef(scene.tx, 1.0f, 0.0f, 0.0f);
 	glRotatef(scene.ty, 0.0f, 1.0f, 0.0f);
