@@ -2,3 +2,4 @@
 *.mp4
 bin/
 .vscode/
+.config.json
